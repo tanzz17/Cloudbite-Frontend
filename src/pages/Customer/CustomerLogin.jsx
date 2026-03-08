@@ -19,7 +19,7 @@ export default function CustomerLogin() {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:8080/api/customer/login", // 🔹 backend endpoint
+        "cloudbite-backend-production.up.railway.app/customer/login", // 🔹 backend endpoint
         credentials
       );
       login(res.data);

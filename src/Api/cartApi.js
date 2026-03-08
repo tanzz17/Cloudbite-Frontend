@@ -1,7 +1,7 @@
 // 📁 src/api/cartApi.js
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api/customers/cart";
+const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
 
 // ✅ Get full cart by userId
 export const getCart = (userId) => axios.get(`${API_BASE_URL}/user/${userId}`);

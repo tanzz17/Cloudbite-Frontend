@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { SampleNextArrow, SamplePrevArrow } from "../../components/Home/Arrow";
 import { ThemeContext } from "../../context/ThemeContext";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
 
 const ReOrderSlider = ({ userId }) => {
   const { isDarkMode } = useContext(ThemeContext);

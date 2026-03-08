@@ -7,7 +7,7 @@ import axios from "axios";
 import { ThemeContext } from "../../context/ThemeContext";
 import { ArrowLeft, CheckCircle, Loader2, Store, Home } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "cloudbite-backend-production.up.railway.app/api";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({

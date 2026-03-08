@@ -1,7 +1,7 @@
 // 📁 src/Api/orderApi.js
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api/orders";
+const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
 
 // ✅ Attach JWT token if available
 const getAuthHeaders = () => {

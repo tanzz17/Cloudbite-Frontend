@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Loader2, CreditCard, Wallet } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
 
 const loadRazorpayScript = () =>
   new Promise((resolve) => {

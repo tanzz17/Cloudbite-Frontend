@@ -28,7 +28,7 @@ export default function KitchenProfile() {
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/auth/my-kitchen", {
+        const res = await axios.get("cloudbite-backend-production.up.railway.app/auth/my-kitchen", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -71,7 +71,7 @@ export default function KitchenProfile() {
       if (file) multipartData.append("image", file);
 
       const res = await axios.put(
-        `http://localhost:8080/api/kitchen-owner/update-my-kitchen/${formData.id}`,
+        `cloudbite-backend-production.up.railway.app/api/kitchen-owner/update-my-kitchen/${formData.id}`,
         multipartData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -101,7 +101,7 @@ export default function KitchenProfile() {
   const getImageUrl = (url) => {
     if (!url) return "/placeholder.jpg";
     if (url.startsWith("blob:") || url.startsWith("http")) return url;
-    return `http://localhost:8080/${url}`;
+    return `cloudbite-backend-production.up.railway.app/${url}`;
   };
 
   return (

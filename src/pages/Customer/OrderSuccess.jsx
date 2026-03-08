@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ThemeContext } from "../../context/ThemeContext";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
 
 const formatPrice = (price) =>
   new Intl.NumberFormat("en-IN", {

@@ -8,7 +8,7 @@ import { SampleNextArrow, SamplePrevArrow } from "../../components/Home/Arrow";
 import { ThemeContext } from "../../context/ThemeContext";
 import { categoryImages } from "../Customer/UserHomeData";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
 
 const categoryMap = {
   Breakfast: ["South Indian", "Maharashtrian"],
