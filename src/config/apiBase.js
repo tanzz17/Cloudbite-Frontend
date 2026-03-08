@@ -10,6 +10,7 @@ export const API_BASE_URL = hasApiSuffix
 export const WS_BASE_URL = API_BASE_URL.replace(/\/api$/i, "");
 
 export const apiUrl = (path = "") => {
+  if (!path) return API_BASE_URL;
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${cleanPath}`;
 };
