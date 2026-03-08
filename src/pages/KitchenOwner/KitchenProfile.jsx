@@ -83,14 +83,26 @@ export default function KitchenProfile() {
       toast.success("Identity updated successfully");
       setIsEditing(false);
       setFile(null);
-    } catch {
-      toast.error("Update failed");
+    } catch (err) {
+      const msg =
+        (typeof err?.response?.data === "string" && err.response.data) ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Update failed";
+      toast.error(msg);
     }
   };
 
   const getImageUrl = (url) => {
     if (!url) return "/placeholder.jpg";
-    if (url.startsWith("blob:") || url.startsWith("http")) return url;
+    if (url.startsWith("blob:")) return url;
+
+    if (url.startsWith("http://localhost:8080/")) {
+      const relative = url.replace("http://localhost:8080/", "");
+      return `${WS_BASE_URL}/${relative.replace(/^\/+/, "")}`;
+    }
+
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
     return `${WS_BASE_URL}/${url.replace(/^\/+/, "")}`;
   };
 
@@ -225,3 +237,5 @@ function Field({ label, name, value, disabled, onChange, icon, isDark }) {
     </div>
   );
 }
+
+
