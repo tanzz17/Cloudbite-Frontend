@@ -28,7 +28,7 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:8080/auth/signin",
+        `${import.meta.env.VITE_API_BASE_URL}/auth/signin`,
         formData
       );
 

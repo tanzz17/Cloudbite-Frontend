@@ -21,8 +21,9 @@ export const connectOrderSocket = (topicId, onMessage) => {
   }
 
   // 3. Start fresh connection
-  const socket = new SockJS("http://localhost:8080/ws");
-  stompClient = new Client({
+const wsBaseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+const socket = new SockJS(`${wsBaseUrl}/ws`);  
+stompClient = new Client({
     webSocketFactory: () => socket,
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,

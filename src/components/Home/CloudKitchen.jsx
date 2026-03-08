@@ -16,7 +16,7 @@ export default function CloudKitchens() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/kitchens/all")
+      .get(`${import.meta.env.VITE_API_BASE_URL}/api/kitchens/all`)
       .then((res) => {
         setKitchens(res.data);
         setLoading(false);
@@ -29,7 +29,7 @@ export default function CloudKitchens() {
 
   const getImageUrl = (url) => {
     if (!url) return "/default-kitchen.jpg";
-    return url.startsWith("http") ? url : `http://localhost:8080/${url.replace(/^\/+/, "")}`;
+    return url.startsWith("http") ? url : `${import.meta.env.VITE_API_BASE_URL}/${url.replace(/^\/+/, "")}`;
   };
 
   return (

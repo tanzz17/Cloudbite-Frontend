@@ -30,7 +30,7 @@ const Signup = () => {
     setLoading(true);
     try {
       // 1️⃣ Register the user (Customer by default)
-      const res = await axios.post("http://localhost:8080/auth/signup", {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/signup`, {
         fullName,
         email,
         password,
