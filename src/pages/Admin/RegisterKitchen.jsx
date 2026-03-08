@@ -1,7 +1,7 @@
-import axios from "axios";
 import toast from "react-hot-toast";
 import React, { useState, useContext } from "react";
 import AdminLayout from "./AdminLayout";
+import api from "../../Api/api";
 import { ThemeContext } from "../../context/ThemeContext";
 import { FiUser, FiMail, FiLock, FiHome, FiMapPin, FiPlusCircle } from "react-icons/fi";
 
@@ -17,21 +17,17 @@ export default function RegisterKitchen() {
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const token = localStorage.getItem("jwt");
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/admin/register-kitchen`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
 
-      toast.success(res.data.message || "Kitchen registered successfully!");
+    try {
+      const res = await api.post("/auth/admin/register-kitchen", formData);
+
+      toast.success(res.data?.message || "Kitchen registered successfully!");
       setFormData({
         fullName: "",
         email: "",
@@ -41,23 +37,21 @@ export default function RegisterKitchen() {
       });
     } catch (err) {
       console.error("Registration Error:", err);
-      toast.error(err.response?.data?.message || "Something went wrong");
+      toast.error(err?.response?.data?.message || err?.response?.data || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  // Shared UI Styles
   const inputBaseClass = `w-full pl-12 pr-4 py-4 rounded-2xl border transition-all duration-300 outline-none font-medium ${
-    isDarkMode 
-      ? "bg-[#1c2233] border-white/10 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" 
+    isDarkMode
+      ? "bg-[#1c2233] border-white/10 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
       : "bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5"
   }`;
 
   return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
         <div className="mb-10 text-center md:text-left">
           <h2 className="text-4xl font-black tracking-tighter mb-2">
             Register New <span className="text-indigo-500">Kitchen</span>
@@ -68,8 +62,6 @@ export default function RegisterKitchen() {
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Kitchen Name */}
           <div className="relative group md:col-span-2">
             <FiHome className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -83,7 +75,6 @@ export default function RegisterKitchen() {
             />
           </div>
 
-          {/* Owner Full Name */}
           <div className="relative group">
             <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -97,7 +88,6 @@ export default function RegisterKitchen() {
             />
           </div>
 
-          {/* Owner Email */}
           <div className="relative group">
             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -111,7 +101,6 @@ export default function RegisterKitchen() {
             />
           </div>
 
-          {/* Kitchen Address - Full Width */}
           <div className="relative group md:col-span-2">
             <FiMapPin className="absolute left-4 top-6 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <textarea
@@ -122,10 +111,9 @@ export default function RegisterKitchen() {
               value={formData.kitchenAddress}
               onChange={handleChange}
               className={`${inputBaseClass} pl-12 pt-5 resize-none`}
-            ></textarea>
+            />
           </div>
 
-          {/* Password */}
           <div className="relative group md:col-span-2">
             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -139,7 +127,6 @@ export default function RegisterKitchen() {
             />
           </div>
 
-          {/* Submit Button */}
           <div className="md:col-span-2 mt-4">
             <button
               type="submit"

@@ -1,7 +1,8 @@
+/* AddDish.jsx */
 import React, { useState, useEffect, useContext } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import KitchenLayout from "./KitchenLayout";
+import api from "../../Api/api";
 import { PlusCircle, Image as ImageIcon, IndianRupee, Tag, Info } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
 
@@ -15,34 +16,27 @@ export default function AddDish() {
     price: "",
     image: "",
     category: "",
-    subCategory: "", // ✅ NEW
+    subCategory: "",
     available: true,
     vegetarian: false,
     seasonal: false,
   });
 
-  const token = localStorage.getItem("jwt");
-
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/auth/my-kitchen");
         setKitchen(res.data);
       } catch (err) {
         console.error("Error fetching kitchen:", err);
       }
     };
     fetchKitchen();
-  }, [token]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
@@ -63,31 +57,25 @@ export default function AddDish() {
         seasonal: formData.seasonal,
         images: [formData.image],
         category: { name: formData.category },
-        subCategory: { name: formData.subCategory }, // ✅ NEW
+        subCategory: formData.subCategory ? { name: formData.subCategory } : null,
       };
 
-      await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/add-item/${kitchen.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/kitchen-owner/add-item/${kitchen.id}`, payload);
 
       toast.success("Dish added to the tribe!");
-
       setFormData({
         name: "",
         description: "",
         price: "",
         image: "",
         category: "",
-        subCategory: "", // ✅ reset
+        subCategory: "",
         available: true,
         vegetarian: false,
         seasonal: false,
       });
-
     } catch (error) {
-      toast.error(error.response?.data || "Failed to add dish");
+      toast.error(error?.response?.data?.message || error?.response?.data || "Failed to add dish");
     }
   };
 

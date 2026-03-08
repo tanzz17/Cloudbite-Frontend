@@ -12,7 +12,8 @@ import bannerImage4 from "../../components/Home/Banner/4.jpg";
 
 import CloudKitchens from "../../components/Home/CloudKitchen";
 import RecommendedSlider from "./RecommendSlider";
-import ReOrderSlider from "./ReOrderSlider"; // ✅ ADDED
+import ReOrderSlider from "./ReOrderSlider";
+import { apiUrl } from "../../config/apiBase";
 
 const bannerImages = [bannerImage1, bannerImage2, bannerImage3, bannerImage4];
 
@@ -23,12 +24,10 @@ export default function CustomerDashboard() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [foods, setFoods] = useState([]);
 
-  // Banner Rotation
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % bannerImages.length);
@@ -36,41 +35,28 @@ export default function CustomerDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Search
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    if (value.trim().length > 0) {
-      navigate(`/search?q=${encodeURIComponent(value)}`);
-    }
+    if (value.trim().length > 0) navigate(`/search?q=${encodeURIComponent(value)}`);
   };
 
-  // CATEGORY SELECT
   const handleCategorySelect = async (category) => {
     try {
       setSelectedCategory(category);
       setSelectedSubCategory("");
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/public/category/${category}`
-      );
-      const data = await res.json();
-      setFoods(data);
+      const res = await fetch(apiUrl(`/public/category/${category}`));
+      setFoods(await res.json());
     } catch (error) {
       console.error("Error fetching category foods:", error);
     }
   };
 
-  // SUBCATEGORY SELECT
   const handleSubCategorySelect = async (subCategory) => {
     try {
       setSelectedSubCategory(subCategory);
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/public/subcategory/${subCategory}`
-      );
-      const data = await res.json();
-      setFoods(data);
+      const res = await fetch(apiUrl(`/public/subcategory/${subCategory}`));
+      setFoods(await res.json());
     } catch (error) {
       console.error("Error fetching subcategory foods:", error);
     }

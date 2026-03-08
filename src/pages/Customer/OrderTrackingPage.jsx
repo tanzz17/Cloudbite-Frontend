@@ -2,12 +2,13 @@ import React, { useEffect, useState, useRef, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
+import { apiUrl } from "../../config/apiBase";
 import "leaflet/dist/leaflet.css";
 import axios from "axios";
 import { ThemeContext } from "../../context/ThemeContext";
 import { ArrowLeft, CheckCircle, Loader2, Store, Home } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = apiUrl("");
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({

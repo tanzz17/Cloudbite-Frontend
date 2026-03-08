@@ -1,10 +1,8 @@
-/* eslint-disable no-unused-vars */
-// src/Pages/Customer/CustomerLogin.jsx
 import React, { useState, useContext } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { AuthContext } from "../../components/AuthControls/AuthContext";
 import { Link } from "react-router-dom";
+import { loginUser } from "../../Api/api";
 
 export default function CustomerLogin() {
   const { login } = useContext(AuthContext);
@@ -12,18 +10,15 @@ export default function CustomerLogin() {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) =>
-    setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/customer/login`,
-        credentials
-      );
-      login(res.data);
-    } catch (error) {
+      const data = await loginUser(credentials);
+      login(data);
+    } catch {
       toast.error("Invalid credentials");
     } finally {
       setLoading(false);

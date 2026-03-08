@@ -10,6 +10,7 @@ import {
   FiArrowLeft
 } from "react-icons/fi";
 import axios from "axios";
+import { apiUrl } from "../../config/apiBase";
 import { AuthContext } from "../../components/AuthControls/AuthContext";
 import { ThemeContext } from "../../context/ThemeContext";
 
@@ -26,7 +27,7 @@ export default function KitchenLayout({ children }) {
       if (!token) return;
 
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}auth/my-kitchen`, {
+        const res = await axios.get(apiUrl("/auth/my-kitchen"), {
           headers: { Authorization: `Bearer ${token}` },
         });
         setKitchen(res.data);
@@ -142,3 +143,5 @@ function SidebarButton({ icon, label, onClick, isActive, isDarkMode }) {
     </button>
   );
 }
+
+

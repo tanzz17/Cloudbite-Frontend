@@ -1,23 +1,21 @@
-// 📁 src/api/cartApi.js
-import axios from "axios";
+import api from "./api";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Get full cart by userId
+export const getCart = (userId) =>
+  api.get(`/customers/cart/user/${userId}`);
 
-// ✅ Get full cart by userId
-export const getCart = (userId) => axios.get(`${API_BASE_URL}/user/${userId}`);
-
-// ✅ Add food to cart
+// Add food to cart
 export const addToCart = (userId, foodId, quantity = 1) =>
-  axios.post(`${API_BASE_URL}/add/${userId}/${foodId}?quantity=${quantity}`);
+  api.post(`/customers/cart/add/${userId}/${foodId}?quantity=${quantity}`);
 
-// ✅ Remove specific item from cart
+// Remove specific item from cart
 export const removeFromCart = (userId, cartItemId) =>
-  axios.delete(`${API_BASE_URL}/remove/${userId}/${cartItemId}`);
+  api.delete(`/customers/cart/remove/${userId}/${cartItemId}`);
 
-// ✅ Clear all items from cart
+// Clear all items from cart
 export const clearCart = (userId) =>
-  axios.delete(`${API_BASE_URL}/clear/${userId}`);
+  api.delete(`/customers/cart/clear/${userId}`);
 
-// ✅ Update quantity of a food in cart
+// Update quantity of a food in cart
 export const updateCartItemQuantity = (userId, foodId, quantity) =>
-  axios.put(`${API_BASE_URL}/update/${userId}/${foodId}?quantity=${quantity}`);
+  api.put(`/customers/cart/update/${userId}/${foodId}?quantity=${quantity}`);

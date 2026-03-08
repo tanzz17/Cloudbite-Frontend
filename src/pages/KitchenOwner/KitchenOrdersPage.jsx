@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState, useMemo, useContext } from "react";
 import axios from "axios";
+import { apiUrl } from "../../config/apiBase";
 import toast from "react-hot-toast";
 import { Loader2, Package, Clock, Check, MapPin, Truck, CheckCircle, Zap, UtensilsCrossed, XCircle, CreditCard, Banknote } from "lucide-react";
 import KitchenLayout from "./KitchenLayout";
@@ -39,7 +40,7 @@ export default function KitchenOrdersPage() {
 
   const fetchKitchen = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get(apiUrl("/auth/my-kitchen"), { headers: { Authorization: `Bearer ${token}` } });
       localStorage.setItem("kitchenData", JSON.stringify(res.data));
       setKitchenId(res.data.id);
     } catch (err) {
@@ -49,7 +50,7 @@ export default function KitchenOrdersPage() {
 
   const fetchOrders = () => {
     if (!kitchenId) return;
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/orders/kitchen/${kitchenId}`, { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(apiUrl(`/orders/kitchen/${kitchenId}`), { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setOrders(res.data || []))
       .catch(() => toast.error("Failed to fetch orders"))
       .finally(() => setLoading(false));
@@ -69,7 +70,7 @@ export default function KitchenOrdersPage() {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}/status?status=${status}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(apiUrl(`/orders/${orderId}/status?status=${status}`), {}, { headers: { Authorization: `Bearer ${token}` } });
       setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, orderStatus: status } : o));
       toast.success(`Status updated to ${status.replace(/_/g, ' ')}`);
     } catch (err) {
@@ -291,3 +292,5 @@ export default function KitchenOrdersPage() {
     </KitchenLayout>
   );
 }
+
+

@@ -21,7 +21,7 @@ export default function RegisterDeliveryPartner() {
   const [status, setStatus] = useState({ type: "", message: "" });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -34,38 +34,35 @@ export default function RegisterDeliveryPartner() {
       setStatus({ type: "success", message: "Delivery partner registered successfully!" });
       setTimeout(() => navigate("/admin/delivery-partners"), 2000);
     } catch (err) {
-      setStatus({ 
-        type: "error", 
-        message: err.response?.data || "Failed to register delivery partner" 
-      });
+      const message =
+        err?.response?.data?.message ||
+        (typeof err?.response?.data === "string" ? err.response.data : null) ||
+        "Failed to register delivery partner";
+      setStatus({ type: "error", message });
     } finally {
       setLoading(false);
     }
   };
 
-  // Shared Input Styles
   const inputBaseClass = `w-full pl-12 pr-4 py-4 rounded-2xl border transition-all duration-300 outline-none font-medium ${
-    isDarkMode 
-      ? "bg-[#1c2233] border-white/10 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" 
+    isDarkMode
+      ? "bg-[#1c2233] border-white/10 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
       : "bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5"
   }`;
 
   return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
         <div className="mb-10 text-center md:text-left">
           <h2 className="text-4xl font-black tracking-tighter mb-2">
             Onboard <span className="text-indigo-500">Partner</span>
           </h2>
-          <p className={`text-sm font-bold uppercase tracking-widest opacity-60`}>
+          <p className="text-sm font-bold uppercase tracking-widest opacity-60">
             Add a new delivery professional to the fleet
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Full Name */}
           <div className="relative group">
             <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -79,7 +76,6 @@ export default function RegisterDeliveryPartner() {
             />
           </div>
 
-          {/* Email */}
           <div className="relative group">
             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -93,7 +89,6 @@ export default function RegisterDeliveryPartner() {
             />
           </div>
 
-          {/* Phone */}
           <div className="relative group">
             <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -107,7 +102,6 @@ export default function RegisterDeliveryPartner() {
             />
           </div>
 
-          {/* Vehicle Type */}
           <div className="relative group">
             <FiTruck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <select
@@ -117,14 +111,15 @@ export default function RegisterDeliveryPartner() {
               onChange={handleChange}
               className={`${inputBaseClass} appearance-none`}
             >
-              <option value="" disabled>Select Vehicle Type</option>
+              <option value="" disabled>
+                Select Vehicle Type
+              </option>
               <option value="Bike">Bike</option>
               <option value="Scooter">Scooter</option>
               <option value="Cycle">Cycle</option>
             </select>
           </div>
 
-          {/* Password - Span full width */}
           <div className="relative group md:col-span-2">
             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input
@@ -138,7 +133,6 @@ export default function RegisterDeliveryPartner() {
             />
           </div>
 
-          {/* Action Button & Feedback */}
           <div className="md:col-span-2 mt-4 space-y-4">
             <button
               type="submit"
@@ -149,11 +143,13 @@ export default function RegisterDeliveryPartner() {
             </button>
 
             {status.message && (
-              <div className={`flex items-center gap-3 p-4 rounded-2xl animate-in fade-in slide-in-from-bottom-2 ${
-                status.type === "success" 
-                  ? "bg-green-500/10 text-green-500 border border-green-500/20" 
-                  : "bg-red-500/10 text-red-500 border border-red-500/20"
-              }`}>
+              <div
+                className={`flex items-center gap-3 p-4 rounded-2xl animate-in fade-in slide-in-from-bottom-2 ${
+                  status.type === "success"
+                    ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                    : "bg-red-500/10 text-red-500 border border-red-500/20"
+                }`}
+              >
                 {status.type === "success" ? <FiCheckCircle /> : <FiAlertCircle />}
                 <p className="text-sm font-bold uppercase tracking-wider">{status.message}</p>
               </div>

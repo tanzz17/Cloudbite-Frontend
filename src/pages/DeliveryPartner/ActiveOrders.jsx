@@ -1,8 +1,26 @@
+/* ActiveOrders.jsx */
 import React, { useEffect, useState, useContext, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { MapPin, Package, CheckCircle, Navigation, Zap, Power, Wifi, WifiOff, Loader2 } from "lucide-react";
-import { getActiveOrders, updateDeliveryStatus, acceptOrder, goOnline, goOffline, getMyDeliveryProfile } from "../../Api/deliveryApi";
+import {
+  MapPin,
+  Package,
+  CheckCircle,
+  Navigation,
+  Zap,
+  Power,
+  Wifi,
+  WifiOff,
+  Loader2,
+} from "lucide-react";
+import {
+  getActiveOrders,
+  updateDeliveryStatus,
+  acceptOrder,
+  goOnline,
+  goOffline,
+  getMyDeliveryProfile,
+} from "../../Api/deliveryApi";
 import { connectOrderSocket, disconnectSocket } from "../../socket";
 import { ThemeContext } from "../../context/ThemeContext";
 
@@ -16,21 +34,18 @@ export default function ActiveOrders() {
   const hasConnected = useRef(false);
 
   const getErrorMessage = (err) => {
-    if (typeof err.response?.data === 'string') return err.response.data;
-    if (err.response?.data?.message) return err.response.data.message;
+    if (typeof err?.response?.data === "string") return err.response.data;
+    if (err?.response?.data?.message) return err.response.data.message;
     return "Protocol error: check system logs.";
   };
 
   const fetchInitialData = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setLoading(true);
-      const [ordersRes, profileRes] = await Promise.all([
-        getActiveOrders(),
-        getMyDeliveryProfile()
-      ]);
+      const [ordersRes, profileRes] = await Promise.all([getActiveOrders(), getMyDeliveryProfile()]);
       setOrders(ordersRes.data || []);
-      const currentStatus = profileRes.data.status;
-      setIsAvailable(currentStatus === "AVAILABLE" || currentStatus === "BUSY");
+      const currentStatus = profileRes?.data?.status;
+      setIsAvailable(currentStatus === "AVAILABLE" || currentStatus === "BUSY" || currentStatus === "ONLINE");
     } catch (err) {
       console.error("Data Sync Error:", err);
       if (!isSilent) toast.error("Failed to sync with dispatch.");
@@ -49,7 +64,9 @@ export default function ActiveOrders() {
             toast.success("New order available!");
             fetchInitialData(true);
           } else {
-            setOrders(prev => prev.map(o => o.orderId === event.orderId ? { ...o, orderStatus: event.status } : o));
+            setOrders((prev) =>
+              prev.map((o) => (o.orderId === event.orderId ? { ...o, orderStatus: event.status } : o))
+            );
           }
         }
       });
@@ -57,12 +74,10 @@ export default function ActiveOrders() {
     }
 
     return () => {
-      setTimeout(() => {
-        if (hasConnected.current) {
-          disconnectSocket();
-          hasConnected.current = false;
-        }
-      }, 50);
+      if (hasConnected.current) {
+        disconnectSocket();
+        hasConnected.current = false;
+      }
     };
   }, [fetchInitialData]);
 
@@ -70,7 +85,7 @@ export default function ActiveOrders() {
     try {
       if (isAvailable) {
         await goOffline();
-        toast("Shift Ended", { icon: "🔌" });
+        toast.success("Shift ended");
       } else {
         await goOnline();
         toast.success("Online - Systems Ready");
@@ -106,10 +121,10 @@ export default function ActiveOrders() {
 
       if (status === "DELIVERED") {
         toast.success("Mission Accomplished!");
-        setOrders(prev => prev.filter(o => o.orderId !== orderId));
+        setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
         setTimeout(() => navigate("../history"), 500);
       } else {
-        toast.success(`Status updated: ${status.replace(/_/g, ' ')}`);
+        toast.success(`Status updated: ${status.replace(/_/g, " ")}`);
         fetchInitialData(true);
       }
     } catch (err) {
@@ -119,12 +134,15 @@ export default function ActiveOrders() {
     }
   };
 
-  if (loading) return (
-    <div className="flex flex-col justify-center items-center mt-40">
-      <Loader2 className="animate-spin text-orange-500 mb-4" size={32} />
-      <div className="italic font-black text-orange-500 tracking-[0.3em] text-[10px] uppercase">Synchronizing...</div>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex flex-col justify-center items-center mt-40">
+        <Loader2 className="animate-spin text-orange-500 mb-4" size={32} />
+        <div className="italic font-black text-orange-500 tracking-[0.3em] text-[10px] uppercase">
+          Synchronizing...
+        </div>
+      </div>
+    );
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 px-4">

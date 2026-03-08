@@ -1,21 +1,20 @@
 // src/Api/api.js
 import axios from "axios";
+import { API_BASE_URL } from "../config/apiBase";
 
-// Base URL of your backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Request interceptor to attach JWT (skip for OTP endpoints)
 api.interceptors.request.use(
   (config) => {
-    if (
-      !config.url.includes("/auth/forgot-password") &&
-      !config.url.includes("/auth/reset-password")
-    ) {
+    const isAuthEndpoint =
+      config.url?.includes("/auth/signin") ||
+      config.url?.includes("/auth/signup") ||
+      config.url?.includes("/auth/forgot-password") ||
+      config.url?.includes("/auth/reset-password");
+
+    if (!isAuthEndpoint) {
       const token = localStorage.getItem("jwt");
       if (token) config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,11 +23,9 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ---------------- CUSTOMER SIGNUP (NEW) ---------------- //
 export const registerCustomer = async (customerData) => {
   const response = await api.post("/auth/signup/customer", customerData);
 
-  // ✅ Auto-login after signup
   const data = response.data;
   if (data.jwtToken) {
     localStorage.setItem("jwt", data.jwtToken);
@@ -38,7 +35,6 @@ export const registerCustomer = async (customerData) => {
   return data;
 };
 
-// ---------------- NORMAL USER LOGIN/SIGNUP ---------------- //
 export const registerUser = async (userData) => {
   const response = await api.post("/auth/signup", userData);
   localStorage.setItem("jwt", response.data.jwtToken);
@@ -53,7 +49,6 @@ export const loginUser = async (loginData) => {
   return response.data;
 };
 
-// ---------------- USER PROFILE ---------------- //
 export const getUserProfile = async () => {
   const userData = localStorage.getItem("user");
   if (userData) return JSON.parse(userData);
@@ -66,7 +61,6 @@ export const updateUserProfile = async (updatedUser) => {
   return response.data;
 };
 
-// ---------------- PASSWORD RESET ---------------- //
 export const sendForgotPasswordOtp = async (email) => {
   const response = await api.post("/auth/forgot-password", { email });
   return response.data;
@@ -81,7 +75,6 @@ export const resetPassword = async ({ email, otp, newPassword }) => {
   return response.data;
 };
 
-// ---------------- LOGOUT ---------------- //
 export const logoutUser = () => {
   localStorage.removeItem("jwt");
   localStorage.removeItem("user");

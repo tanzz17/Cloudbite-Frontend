@@ -1,66 +1,80 @@
-import SockJS from "sockjs-client/dist/sockjs";
+import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import { WS_BASE_URL } from "./config/apiBase";
 
 let stompClient = null;
 let subscriptionQueue = [];
+const activeSubs = new Map();
+
+const safeParse = (body) => {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+};
+
+const subscribeToTopic = (topicId, onMessage) => {
+  const destination = `/topic/orders/${topicId}`;
+
+  if (activeSubs.has(destination)) {
+    activeSubs.get(destination).unsubscribe();
+    activeSubs.delete(destination);
+  }
+
+  const sub = stompClient.subscribe(destination, (message) => {
+    const data = safeParse(message.body);
+    if (data) onMessage(data);
+  });
+
+  activeSubs.set(destination, sub);
+};
 
 export const connectOrderSocket = (topicId, onMessage) => {
-  // 1. If already connected, subscribe immediately and exit
-  if (stompClient && stompClient.connected) {
-    console.log(`📡 Adding immediate subscription for: ${topicId}`);
-    stompClient.subscribe(`/topic/orders/${topicId}`, (message) => {
-      onMessage(JSON.parse(message.body));
-    });
+  if (stompClient?.connected) {
+    subscribeToTopic(topicId, onMessage);
     return;
   }
 
-  // 2. If already connecting, queue this request and exit
-  if (stompClient && stompClient.active) {
+  if (stompClient?.active) {
     subscriptionQueue.push({ topicId, onMessage });
     return;
   }
 
-  // 3. Start fresh connection
-const wsBaseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
-const socket = new SockJS(`${wsBaseUrl}/ws`);  
-stompClient = new Client({
-    webSocketFactory: () => socket,
+  stompClient = new Client({
+    webSocketFactory: () => new SockJS(`${WS_BASE_URL}/ws`),
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
-    
-    onConnect: () => {
-      console.log(`✅ WebSocket connected. Initializing subscriptions...`);
-      
-      // Subscribe to the initial request
-      stompClient.subscribe(`/topic/orders/${topicId}`, (message) => {
-        onMessage(JSON.parse(message.body));
-      });
 
-      // Process any queued subscriptions (prevents the "No underlying connection" error)
+    onConnect: () => {
+      subscribeToTopic(topicId, onMessage);
+
       while (subscriptionQueue.length > 0) {
-        const { topicId: qId, onMessage: qFn } = subscriptionQueue.shift();
-        stompClient.subscribe(`/topic/orders/${qId}`, (msg) => qFn(JSON.parse(msg.body)));
+        const { topicId: queuedTopicId, onMessage: queuedHandler } = subscriptionQueue.shift();
+        subscribeToTopic(queuedTopicId, queuedHandler);
       }
     },
 
     onStompError: (frame) => {
-      console.error("❌ STOMP error:", frame.headers['message']);
+      console.error("STOMP error:", frame.headers?.message);
     },
 
     onWebSocketClose: () => {
-      console.warn("🔌 WebSocket connection closed.");
-    }
+      console.warn("WebSocket connection closed.");
+    },
   });
 
   stompClient.activate();
 };
 
 export const disconnectSocket = () => {
+  activeSubs.forEach((sub) => sub.unsubscribe());
+  activeSubs.clear();
+  subscriptionQueue = [];
+
   if (stompClient) {
     stompClient.deactivate();
     stompClient = null;
-    subscriptionQueue = [];
-    console.log("🔌 WebSocket deactivated");
   }
 };

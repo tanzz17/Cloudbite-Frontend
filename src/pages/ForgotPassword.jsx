@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { useNavigate } from "react-router-dom";
+import { resetPassword, sendForgotPasswordOtp } from "../Api/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -10,13 +9,17 @@ export default function ForgotPassword() {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSendOtp = async () => {
-    if (!email) return toast.error("Please enter your email");
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return toast.error("Please enter your email");
+
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/forgot-password`, { email });
-      toast.success(res.data.message);
+      const data = await sendForgotPasswordOtp(cleanEmail);
+      toast.success(data?.message || "OTP sent successfully!");
+      setEmail(cleanEmail);
       setOtpSent(true);
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
@@ -26,19 +29,28 @@ export default function ForgotPassword() {
   };
 
   const handleResetPassword = async () => {
-    if (!otp || !newPassword) return toast.error("Please fill all fields");
+    const cleanOtp = otp.trim();
+    const cleanPassword = newPassword.trim();
+
+    if (!cleanOtp || !cleanPassword) return toast.error("Please fill all fields");
+    if (cleanPassword.length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
+
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/reset-password`, {
+      const data = await resetPassword({
         email,
-        otp,
-        newPassword,
+        otp: cleanOtp,
+        newPassword: cleanPassword,
       });
-      toast.success(res.data.message);
+
+      toast.success(data?.message || "Password reset successful!");
       setOtpSent(false);
       setEmail("");
       setOtp("");
       setNewPassword("");
+      navigate("/login");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to reset password");
     } finally {
@@ -60,12 +72,13 @@ export default function ForgotPassword() {
               placeholder="Enter your registered email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
               className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring focus:ring-orange-200"
             />
             <button
               onClick={handleSendOtp}
               disabled={loading}
-              className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
+              className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition disabled:opacity-70"
             >
               {loading ? "Sending OTP..." : "Send OTP"}
             </button>
@@ -77,6 +90,7 @@ export default function ForgotPassword() {
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
+              disabled={loading}
               className="w-full border border-gray-300 p-3 rounded-lg mb-4"
             />
             <input
@@ -84,12 +98,13 @@ export default function ForgotPassword() {
               placeholder="Enter new password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              disabled={loading}
               className="w-full border border-gray-300 p-3 rounded-lg mb-4"
             />
             <button
               onClick={handleResetPassword}
               disabled={loading}
-              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-70"
             >
               {loading ? "Resetting..." : "Reset Password"}
             </button>

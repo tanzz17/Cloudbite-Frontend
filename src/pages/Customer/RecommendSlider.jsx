@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useContext, useEffect, useState } from "react";
 import Slider from "react-slick";
-import axios from "axios";
+import api from "../../Api/api";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import { SampleNextArrow, SamplePrevArrow } from "../../components/Home/Arrow";
@@ -32,7 +32,7 @@ const RecommendedSlider = ({ onCategorySelect, onSubCategorySelect }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/public/categories`);
+        const res = await api.get("/public/categories");
         setCategories(res.data);
         if (res.data.length > 0) {
           setSelectedCategory(res.data[0]);

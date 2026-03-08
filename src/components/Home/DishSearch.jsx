@@ -1,67 +1,67 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect, useRef } from 'react'; 
-import axios from 'axios';
-import { Search, Loader2, Utensils, Zap, ArrowRight, XCircle, ChevronLeft, FastForward } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+/* eslint-disable no-empty */
+/* DishSearch.jsx */
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Loader2, Utensils, Zap, ArrowRight, XCircle, ChevronLeft, FastForward } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../../Api/api";
+import { WS_BASE_URL } from "../../config/apiBase";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const getUserId = () => JSON.parse(localStorage.getItem("user"))?.id;
 
-// --- Helper Functions ---
-const getUserId = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  return user?.id;
-};
+const addToCartApi = async (userId, foodId, quantity = 1) =>
+  (await api.post(`/customers/cart/add/${userId}/${foodId}?quantity=${quantity}`)).data;
 
-const addToCartApi = async (userId, foodId, quantity = 1) => {
-  const res = await axios.post(`${API_BASE_URL}/customers/cart/add/${userId}/${foodId}?quantity=${quantity}`);
-  return res.data;
-};
+const getCartApi = async (userId) =>
+  (await api.get(`/customers/cart/user/${userId}`)).data;
 
-const getCartApi = async (userId) => {
-  const res = await axios.get(`${API_BASE_URL}/customers/cart/user/${userId}`);
-  return res.data;
-};
-
-// --- Dish Card Component ---
 const DishCard = ({ dish, onAddToCart }) => {
-  const navigate = useNavigate(); 
-  const imageUrl = dish.images?.[0] || 'https://via.placeholder.com/400x300?text=Delicious+Dish';
-  const formatPrice = (price) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price);
+  const navigate = useNavigate();
+  const imageUrl = dish.images?.[0] || "https://via.placeholder.com/400x300?text=Delicious+Dish";
+  const formatPrice = (price) =>
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(price);
 
   return (
-    <div 
-      onClick={() => dish.kitchenId && navigate(`/kitchen/${dish.kitchenId}`)} 
+    <div
+      onClick={() => dish.kitchenId && navigate(`/kitchen/${dish.kitchenId}`)}
       className="group bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 border border-gray-100 cursor-pointer flex flex-col h-full"
     >
       <div className="relative w-full h-52 overflow-hidden">
         <img src={imageUrl} alt={dish.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <span className={`absolute top-4 right-4 text-[10px] font-black tracking-widest px-3 py-1 rounded-full shadow-lg backdrop-blur-md ${
-          dish.vegetarian ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+          dish.vegetarian ? "bg-green-500/90 text-white" : "bg-red-500/90 text-white"
         }`}>
-          {dish.vegetarian ? 'VEG' : 'NON-VEG'}
+          {dish.vegetarian ? "VEG" : "NON-VEG"}
         </span>
       </div>
-      
+
       <div className="p-6 flex flex-col flex-grow">
         <h3 className="text-xl font-black text-gray-800 line-clamp-1 group-hover:text-orange-600 transition-colors">{dish.name}</h3>
         <p className="text-xs font-bold text-orange-500 flex items-center mb-3 uppercase tracking-widest">
           <Utensils className="w-3 h-3 mr-1" /> {dish.kitchenName}
         </p>
         <p className="text-sm text-gray-500 line-clamp-2 mb-6 flex-grow leading-relaxed">{dish.description}</p>
-        
+
         <div className="flex justify-between items-center mt-auto border-t border-gray-50 pt-4">
           <span className="text-2xl font-black text-gray-900 tracking-tighter">{formatPrice(dish.price)}</span>
-          <button 
+          <button
             disabled={!dish.available}
-            onClick={(e) => { e.stopPropagation(); onAddToCart(dish); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart(dish);
+            }}
             className={`h-11 px-6 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg active:scale-90 ${
-              dish.available ? 'bg-orange-500 text-white shadow-orange-200 hover:bg-orange-600' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              dish.available ? "bg-orange-500 text-white shadow-orange-200 hover:bg-orange-600" : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {dish.available ? <><Zap size={14} fill="currentColor"/> Add</> : 'Sold Out'}
+            {dish.available ? (
+              <>
+                <Zap size={14} fill="currentColor" /> Add
+              </>
+            ) : (
+              "Sold Out"
+            )}
           </button>
         </div>
       </div>
@@ -69,43 +69,49 @@ const DishCard = ({ dish, onAddToCart }) => {
   );
 };
 
-// --- Main Search Component ---
 const DishSearch = () => {
-  const searchInputRef = useRef(null); 
+  const searchInputRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [cart, setCart] = useState({ items: [], total: 0 });
-  
+  const [cart, setCart] = useState({ items: [], totalPrice: 0 });
+
   const userId = getUserId();
   const navigate = useNavigate();
 
   const cartItemsCount = cart.items?.reduce((t, i) => t + i.quantity, 0) || 0;
-  const cartTotal = cart.total || 0;
+  const cartTotal = cart.totalPrice ?? cart.total ?? 0;
 
   const fetchCartData = async () => {
     if (!userId) return;
     try {
       const data = await getCartApi(userId);
-      setCart(data);
-    } catch (err) { console.error(err); }
+      setCart(data || { items: [], totalPrice: 0 });
+    } catch {}
   };
 
   const fetchResults = async (query) => {
     const trimmedQuery = query.trim();
-    if (trimmedQuery.length < 2) { setResults([]); return; }
+    if (trimmedQuery.length < 2) {
+      setResults([]);
+      return;
+    }
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/public/search/dishes?q=${trimmedQuery}`);
+      const response = await api.get(`/public/search/dishes?q=${encodeURIComponent(trimmedQuery)}`);
       setResults(Array.isArray(response.data) ? response.data : []);
-    } catch (err) { setError("Server disconnected."); }
-    finally { setIsLoading(false); }
+    } catch {
+      setError("Server disconnected.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    const query = searchParams.get('q') || '';
+    const query = searchParams.get("q") || "";
     setSearchTerm(query);
     const timer = setTimeout(() => fetchResults(query), 300);
     return () => clearTimeout(timer);
@@ -118,16 +124,24 @@ const DishSearch = () => {
 
   const handleAddToCart = async (dish) => {
     if (!userId) return toast.error("Login to order!");
-    if (cart.items?.length > 0 && cart.items[0]?.food?.kitchen?.id !== dish.kitchenId) {
-      toast.error("Clear your cart to order from another kitchen!");
-      return;
+
+    if (cart.items?.length > 0) {
+      const existingKitchenId = cart.items[0]?.food?.kitchen?.id || cart.items[0]?.kitchenId;
+      if (existingKitchenId && existingKitchenId != dish.kitchenId) {
+        toast.error("Clear your cart to order from another kitchen!");
+        return;
+      }
     }
+
     try {
       await addToCartApi(userId, dish.id, 1);
       toast.success("Added to your feast!");
       fetchCartData();
-    } catch (err) { toast.error("Failed to add."); }
+    } catch {
+      toast.error("Failed to add.");
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-[#fafbfc] pb-32 mt-20">

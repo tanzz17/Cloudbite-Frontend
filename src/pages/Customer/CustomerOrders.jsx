@@ -1,8 +1,7 @@
+/* src/pages/Customer/CustomerOrders.jsx */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import toast from "react-hot-toast";
 import {
   Loader2, Package, Calendar, CreditCard, CheckCircle,
@@ -10,9 +9,7 @@ import {
 } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { connectOrderSocket, disconnectSocket } from "../../socket";
-
-const API_BASE = `${import.meta.env.VITE_API_BASE_URL}api/orders`;
-const API_PAYMENT = `${import.meta.env.VITE_API_BASE_URL}api/payment`;
+import api from "../../Api/api";
 
 const formatPrice = (price) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(price || 0);
@@ -30,13 +27,13 @@ const loadRazorpayScript = () =>
 
 const STATUS_CONFIG = {
   PAYMENT_PENDING: { label: "Payment Pending", color: "text-yellow-600 bg-yellow-50 border-yellow-200", icon: Clock, dot: "bg-yellow-400" },
-  PENDING:         { label: "Order Placed",    color: "text-blue-600 bg-blue-50 border-blue-200",       icon: Clock, dot: "bg-blue-400" },
-  CONFIRMED:       { label: "Confirmed",        color: "text-indigo-600 bg-indigo-50 border-indigo-200", icon: CheckCircle, dot: "bg-indigo-400" },
-  READY_FOR_PICKUP:{ label: "Ready for Pickup", color: "text-purple-600 bg-purple-50 border-purple-200", icon: Package, dot: "bg-purple-400" },
-  ON_THE_WAY:      { label: "On the Way",       color: "text-orange-600 bg-orange-50 border-orange-200", icon: Truck, dot: "bg-orange-400" },
-  OUT_FOR_DELIVERY:{ label: "Out for Delivery", color: "text-orange-600 bg-orange-50 border-orange-200", icon: Truck, dot: "bg-orange-400" },
-  DELIVERED:       { label: "Delivered",        color: "text-green-600 bg-green-50 border-green-200",   icon: CheckCircle, dot: "bg-green-400" },
-  CANCELLED:       { label: "Cancelled",        color: "text-red-600 bg-red-50 border-red-200",         icon: XCircle, dot: "bg-red-400" },
+  PENDING: { label: "Order Placed", color: "text-blue-600 bg-blue-50 border-blue-200", icon: Clock, dot: "bg-blue-400" },
+  CONFIRMED: { label: "Confirmed", color: "text-indigo-600 bg-indigo-50 border-indigo-200", icon: CheckCircle, dot: "bg-indigo-400" },
+  READY_FOR_PICKUP: { label: "Ready for Pickup", color: "text-purple-600 bg-purple-50 border-purple-200", icon: Package, dot: "bg-purple-400" },
+  ON_THE_WAY: { label: "On the Way", color: "text-orange-600 bg-orange-50 border-orange-200", icon: Truck, dot: "bg-orange-400" },
+  OUT_FOR_DELIVERY: { label: "Out for Delivery", color: "text-orange-600 bg-orange-50 border-orange-200", icon: Truck, dot: "bg-orange-400" },
+  DELIVERED: { label: "Delivered", color: "text-green-600 bg-green-50 border-green-200", icon: CheckCircle, dot: "bg-green-400" },
+  CANCELLED: { label: "Cancelled", color: "text-red-600 bg-red-50 border-red-200", icon: XCircle, dot: "bg-red-400" },
 };
 
 const DELIVERY_CHARGES = 35;
@@ -47,14 +44,14 @@ export default function CustomerOrders() {
   const [expandedOrders, setExpandedOrders] = useState({});
   const [payingOrderId, setPayingOrderId] = useState(null);
   const { isDarkMode } = useContext(ThemeContext);
-  const navigate = useNavigate(); // ADDED
+  const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
 
   const fetchOrders = async () => {
     try {
       if (!user) return;
-      const res = await axios.get(`${API_BASE}/user/${user.id}`);
+      const res = await api.get(`/orders/user/${user.id}`);
       const data = Array.isArray(res.data) ? res.data : [];
       setOrders(data.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)));
     } catch {
@@ -87,7 +84,7 @@ export default function CustomerOrders() {
     try {
       setPayingOrderId(order.orderId);
 
-      const paymentRes = await axios.post(`${API_PAYMENT}/create-order/${order.orderId}`);
+      const paymentRes = await api.post(`/payment/create-order/${order.orderId}`);
       const { razorpayOrderId, amount, keyId } = paymentRes.data;
 
       const loaded = await loadRazorpayScript();
@@ -104,19 +101,9 @@ export default function CustomerOrders() {
         name: "CloudBite",
         description: "Food Order Payment",
         order_id: razorpayOrderId,
-        config: {
-          display: {
-            blocks: {
-              netbanking: { name: "Pay via Net Banking", instruments: [{ method: "netbanking" }] },
-              upi: { name: "Pay via UPI / GPay / PhonePe", instruments: [{ method: "upi" }] },
-            },
-            sequence: ["block.netbanking", "block.upi"],
-            preferences: { show_default_blocks: false },
-          },
-        },
         handler: async (response) => {
           try {
-            await axios.post(`${API_PAYMENT}/verify`, {
+            await api.post(`/payment/verify`, {
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
@@ -141,7 +128,7 @@ export default function CustomerOrders() {
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch (err) {
+    } catch {
       toast.error("Failed to initiate payment.");
       setPayingOrderId(null);
     }
@@ -151,6 +138,7 @@ export default function CustomerOrders() {
     (order.paymentMode === "COD" || order.paymentStatus !== "PAID") &&
     order.orderStatus !== "CANCELLED" &&
     order.orderStatus !== "DELIVERED";
+
 
   if (loading)
     return (
@@ -338,3 +326,6 @@ export default function CustomerOrders() {
     </div>
   );
 }
+
+
+

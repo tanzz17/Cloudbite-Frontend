@@ -1,79 +1,49 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { Loader2, Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../../Api/api";
+import { WS_BASE_URL } from "../../config/apiBase";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// ✅ Get stored userId
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   return user?.id;
 };
 
-// ✅ Format price in INR
 const formatPrice = (price) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-  }).format(price);
+  }).format(price || 0);
 
-// ✅ Get Cart
 const getCartApi = async (userId) => {
-  try {
-    const res = await axios.get(`${API_BASE_URL}/customers/cart/user/${userId}`);
-    return res.data;
-  } catch (error) {
-    console.error("❌ Error fetching cart:", error);
-    throw error;
-  }
+  const res = await api.get(`/customers/cart/user/${userId}`);
+  return res.data;
 };
 
-// ✅ Update Cart Quantity
+// IMPORTANT: backend update endpoint is PUT + foodId
 const updateQuantityApi = async (userId, foodId, quantity) => {
-  try {
-    const res = await axios.post(
-      `${API_BASE_URL}/customers/cart/update/${userId}/${foodId}?quantity=${quantity}`
-    );
-    return res.data;
-  } catch (error) {
-    console.error("❌ Error updating quantity:", error);
-    throw error;
-  }
+  const res = await api.put(`/customers/cart/update/${userId}/${foodId}?quantity=${quantity}`);
+  return res.data;
 };
 
-// ✅ Remove Item
-const removeItemApi = async (userId, foodId) => {
-  try {
-    const res = await axios.delete(
-      `${API_BASE_URL}/customers/cart/remove/${userId}/${foodId}`
-    );
-    return res.data;
-  } catch (error) {
-    console.error("❌ Error removing item:", error);
-    throw error;
-  }
+// IMPORTANT: backend remove endpoint expects cartItemId, not foodId
+const removeItemApi = async (userId, cartItemId) => {
+  const res = await api.delete(`/customers/cart/remove/${userId}/${cartItemId}`);
+  return res.data;
 };
 
-// ✅ Clear Cart (if needed)
 const clearCartApi = async (userId) => {
-  try {
-    const res = await axios.delete(`${API_BASE_URL}/customers/cart/clear/${userId}`);
-    return res.data;
-  } catch (error) {
-    console.error("❌ Error clearing cart:", error);
-    throw error;
-  }
+  const res = await api.delete(`/customers/cart/clear/${userId}`);
+  return res.data;
 };
 
-// ✅ Image Helper
 const getImageUrl = (url) => {
   if (!url) return "https://via.placeholder.com/300x300?text=No+Image";
   if (url.startsWith("http")) return url;
-  return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+  return `${WS_BASE_URL}/${url.replace(/^\/+/, "")}`;
 };
 
 export default function CartPage() {
@@ -83,7 +53,6 @@ export default function CartPage() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch Cart on mount
   useEffect(() => {
     if (!userId) {
       toast.error("Please login first!");
@@ -98,80 +67,63 @@ export default function CartPage() {
       setLoading(true);
       const data = await getCartApi(userId);
 
-      // 🧠 Restriction: if cart contains items from multiple kitchens (edge case)
-      const uniqueKitchens = new Set(
-        data.items?.map((item) => item.food?.kitchen?.id)
-      );
+      const uniqueKitchens = new Set(data.items?.map((item) => item.food?.kitchen?.id));
       if (uniqueKitchens.size > 1) {
-        toast.error(
-          "Your cart contains items from multiple kitchens. Please clear your cart before adding from another kitchen."
-        );
+        toast.error("Your cart contains items from multiple kitchens.");
       }
 
       setCart(data);
     } catch (error) {
-      console.error("❌ Error fetching cart:", error);
+      console.error("Error fetching cart:", error);
+      toast.error("Failed to fetch cart");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Increase or decrease quantity
   const handleQuantityChange = async (foodId, newQuantity) => {
     if (newQuantity <= 0) {
-      await handleRemoveItem(foodId);
+      const item = cart?.items?.find((i) => i.food?.id === foodId);
+      if (item) await handleRemoveItem(item.id);
       return;
     }
     try {
       await updateQuantityApi(userId, foodId, newQuantity);
       fetchCart();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update quantity!");
     }
   };
 
-  // ✅ Remove Item from Cart
-  const handleRemoveItem = async (foodId) => {
+  // pass cartItemId here
+  const handleRemoveItem = async (cartItemId) => {
     try {
-      await removeItemApi(userId, foodId);
+      await removeItemApi(userId, cartItemId);
       toast.success("Item removed!");
       fetchCart();
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove item!");
     }
   };
 
-  // ✅ Proceed to Checkout
   const handleCheckout = () => {
     if (!cart || cart.items.length === 0) {
       toast.error("Your cart is empty!");
       return;
     }
 
-    // Restriction double-check: ensure all items are from one kitchen
-    const uniqueKitchens = new Set(
-      cart.items?.map((item) => item.food?.kitchen?.id)
-    );
+    const uniqueKitchens = new Set(cart.items?.map((item) => item.food?.kitchen?.id));
     if (uniqueKitchens.size > 1) {
-      toast.error(
-        "You can checkout items from only one kitchen at a time. Please clear other items first."
-      );
+      toast.error("You can checkout items from only one kitchen at a time.");
       return;
     }
 
-    navigate("/customer/checkout");
+    navigate("/checkout");
   };
 
-  // 🌀 Loading State
-  if (loading)
-    return (
-      <div className="min-h-screen flex flex-col justify-center items-center">
-        <Loader2 className="animate-spin w-10 h-10 text-orange-500 mb-3" />
-        <p>Loading your cart...</p>
-      </div>
-    );
+  if (loading) return null;
 
-  if (!cart || cart.items.length === 0)
+  if (!cart || cart.items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center text-gray-600">
         <ShoppingBag size={48} className="mb-3 text-gray-400" />
@@ -184,10 +136,10 @@ export default function CartPage() {
         </button>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-24">
-      {/* Header */}
       <div className="bg-white shadow-md py-4 mb-6 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center px-4">
           <button
@@ -201,14 +153,12 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Cart Items */}
       <div className="max-w-4xl mx-auto px-4 space-y-4">
         {cart.items.map((item) => (
           <div
-            key={item.food.id}
+            key={item.id}
             className="flex items-center bg-white rounded-xl p-4 shadow-sm border border-gray-100"
           >
-            {/* Food Image */}
             <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 mr-4">
               <img
                 src={getImageUrl(item.food?.images?.[0])}
@@ -217,11 +167,8 @@ export default function CartPage() {
               />
             </div>
 
-            {/* Food Info */}
             <div className="flex-grow">
-              <h3 className="text-lg font-bold text-gray-900">
-                {item.food?.name}
-              </h3>
+              <h3 className="text-lg font-bold text-gray-900">{item.food?.name}</h3>
               <p className="text-gray-600 text-sm mt-1 line-clamp-1">
                 {item.food?.description || "Tasty and freshly prepared"}
               </p>
@@ -229,12 +176,9 @@ export default function CartPage() {
                 {formatPrice(item.food?.price)}
               </p>
 
-              {/* Quantity Controls */}
               <div className="flex items-center mt-2">
                 <button
-                  onClick={() =>
-                    handleQuantityChange(item.food.id, item.quantity - 1)
-                  }
+                  onClick={() => handleQuantityChange(item.food.id, item.quantity - 1)}
                   className="px-2 py-1 border border-gray-300 rounded-l-md hover:bg-gray-100"
                 >
                   -
@@ -243,16 +187,14 @@ export default function CartPage() {
                   {item.quantity}
                 </span>
                 <button
-                  onClick={() =>
-                    handleQuantityChange(item.food.id, item.quantity + 1)
-                  }
+                  onClick={() => handleQuantityChange(item.food.id, item.quantity + 1)}
                   className="px-2 py-1 border border-gray-300 rounded-r-md hover:bg-gray-100"
                 >
                   +
                 </button>
 
                 <button
-                  onClick={() => handleRemoveItem(item.food.id)}
+                  onClick={() => handleRemoveItem(item.id)}
                   className="ml-4 text-red-500 hover:text-red-600 transition"
                 >
                   <Trash2 size={18} />
@@ -263,7 +205,6 @@ export default function CartPage() {
         ))}
       </div>
 
-      {/* Floating Checkout Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-2xl py-4 z-30">
         <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
           <div>
@@ -271,12 +212,11 @@ export default function CartPage() {
               Total ({cart.items.length} items)
             </p>
             <p className="text-xl font-bold text-gray-900">
-              {formatPrice(cart.total || 0)}
+              {formatPrice(cart.totalPrice || 0)}
             </p>
           </div>
           <button
             onClick={handleCheckout}
-            href="/checkout"
             className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition"
           >
             Proceed to Checkout

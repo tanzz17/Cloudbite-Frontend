@@ -1,11 +1,11 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
+/* ManageMenu.jsx */
 import React, { useEffect, useState, useContext } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import KitchenLayout from "./KitchenLayout";
-import { Edit, Trash2, X, Leaf, Flame, Layers, Loader2 } from "lucide-react";
+import { Edit, Trash2, X, Layers, Loader2 } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
+import api from "../../Api/api";
 
 export default function ManageMenu() {
   const [kitchen, setKitchen] = useState(null);
@@ -14,31 +14,25 @@ export default function ManageMenu() {
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(true);
   const { isDarkMode } = useContext(ThemeContext);
-  const token = localStorage.getItem("jwt");
 
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/auth/my-kitchen");
         setKitchen(res.data);
-      } catch (err) {
+      } catch {
         toast.error("Failed to load kitchen");
       }
     };
     fetchKitchen();
-  }, [token]);
+  }, []);
 
   const fetchFoods = async () => {
     if (!kitchen?.id) return;
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/foods/${kitchen.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setFoods(res.data);
-    } catch (err) {
+      const res = await api.get(`/kitchen-owner/foods/${kitchen.id}`);
+      setFoods(res.data || []);
+    } catch {
       toast.error("Failed to load menu");
     } finally {
       setLoading(false);
@@ -47,18 +41,15 @@ export default function ManageMenu() {
 
   useEffect(() => {
     if (kitchen?.id) fetchFoods();
-  }, [kitchen]);
+  }, [kitchen?.id]);
 
   const handleDelete = async (foodId) => {
     if (!window.confirm("Are you sure you want to delete this dish?")) return;
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/foods/${kitchen.id}/${foodId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.delete(`/kitchen-owner/foods/${kitchen.id}/${foodId}`);
       toast.success("Dish deleted successfully");
       fetchFoods();
-    } catch (err) {
+    } catch {
       toast.error("Delete failed");
     }
   };
@@ -79,27 +70,13 @@ export default function ManageMenu() {
   };
 
   const handleEditChange = (e) => {
-  const { name, value, type, checked } = e.target;
-
-  if (name === "categoryName") {
-    setEditData({
-      ...editData,
-      categoryName: value,
-      subCategoryName: "", // reset subcategory when category changes
-    });
-  } else {
-    setEditData({
-      ...editData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  }
-};
-
-
-  // const handleEditChange = (e) => {
-  //   const { name, value, type, checked } = e.target;
-  //   setEditData({ ...editData, [name]: type === "checkbox" ? checked : value });
-  // };
+    const { name, value, type, checked } = e.target;
+    if (name === "categoryName") {
+      setEditData((prev) => ({ ...prev, categoryName: value, subCategoryName: "" }));
+    } else {
+      setEditData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    }
+  };
 
   const handleSaveEdit = async () => {
     try {
@@ -112,22 +89,18 @@ export default function ManageMenu() {
         seasonal: editData.seasonal,
         images: [editData.image],
         category: { name: editData.categoryName },
-        subCategory: { name: editData.subCategoryName },
+        subCategory: editData.subCategoryName ? { name: editData.subCategoryName } : null,
       };
 
-      await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/foods/${kitchen.id}/${editingFood.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      await api.put(`/kitchen-owner/foods/${kitchen.id}/${editingFood.id}`, payload);
       toast.success("Dish updated successfully!");
       setEditingFood(null);
       fetchFoods();
-    } catch (err) {
+    } catch {
       toast.error("Update failed");
     }
   };
+
 
   return (
     <KitchenLayout>

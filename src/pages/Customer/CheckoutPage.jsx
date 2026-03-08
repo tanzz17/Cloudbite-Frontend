@@ -1,7 +1,6 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState, useContext } from "react";
-import axios from "axios";
+import api from "../../Api/api";
 import toast from "react-hot-toast";
 import {
   Loader2,
@@ -12,19 +11,19 @@ import {
   ShieldCheck,
   Phone,
   Wallet,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../context/ThemeContext";
+import { WS_BASE_URL } from "../../config/apiBase";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const DELIVERY_FEE = 30.0;
 const PLATFORM_FEE = 5.0;
 
 const getImageUrl = (url) => {
   if (!url) return "https://via.placeholder.com/300x300?text=No+Image";
   if (url.startsWith("http")) return url;
-  return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+  return `${WS_BASE_URL}/${url.replace(/^\/+/, "")}`;
 };
 
 const formatPrice = (price) =>
@@ -65,9 +64,9 @@ export default function CheckoutPage() {
 
   const fetchCart = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/customers/cart/user/${user.id}`);
+      const res = await api.get(`/customers/cart/user/${user.id}`);
       setCart(res.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load terminal cart!");
     } finally {
       setLoading(false);
@@ -77,9 +76,7 @@ export default function CheckoutPage() {
   const fetchSavedAddress = async () => {
     try {
       const { email, id: userId } = user;
-      const res = await axios.get(`${API_BASE_URL}/customers/profile`, {
-        params: { email, userId },
-      });
+      const res = await api.get("/customers/profile", { params: { email, userId } });
       const data = res.data;
       setSavedAddress({
         fullName: data.fullName,
@@ -88,7 +85,7 @@ export default function CheckoutPage() {
         postalCode: data.postalCode,
         phone: data.phone,
       });
-    } catch (err) {
+    } catch {
       toast.error("Profile sync failed.");
     }
   };
@@ -106,8 +103,7 @@ export default function CheckoutPage() {
   const calculateSubtotal = () => {
     if (!cart?.items?.length) return 0;
     return cart.items.reduce(
-      (sum, item) =>
-        sum + (item.totalPrice ?? (item.priceAtAddition || 0) * (item.quantity || 1)),
+      (sum, item) => sum + (item.totalPrice ?? (item.priceAtAddition || 0) * (item.quantity || 1)),
       0
     );
   };
@@ -125,11 +121,13 @@ export default function CheckoutPage() {
         postalCode: savedAddress.postalCode || "",
       };
     }
+
     const { street, city, state, zipCode, phone } = newAddress;
     if (!street || !city || !state || !zipCode || !phone) {
       toast.error("Incomplete address fields!");
       return null;
     }
+
     return {
       deliveryAddress: `${street}, ${city}, ${state}`,
       phone,
@@ -139,11 +137,7 @@ export default function CheckoutPage() {
   };
 
   const handleCODOrder = async (addressFields) => {
-    const res = await axios.post(
-      `${API_BASE_URL}/orders/place/${user.id}`,
-      {},
-      { params: addressFields }
-    );
+    const res = await api.post(`/orders/place/${user.id}`, null, { params: addressFields });
     if (res.status === 200) {
       toast.success("Order placed! Pay on delivery.");
       navigate("/order-success");
@@ -151,16 +145,10 @@ export default function CheckoutPage() {
   };
 
   const handleOnlinePayment = async (addressFields) => {
-    const orderRes = await axios.post(
-      `${API_BASE_URL}/orders/place/${user.id}`,
-      {},
-      { params: addressFields }
-    );
+    const orderRes = await api.post(`/orders/place/${user.id}`, null, { params: addressFields });
     const placedOrder = orderRes.data;
 
-    const paymentRes = await axios.post(
-      `${API_BASE_URL}/payment/create-order/${placedOrder.orderId}`
-    );
+    const paymentRes = await api.post(`/payment/create-order/${placedOrder.orderId}`);
     const { razorpayOrderId, amount, keyId } = paymentRes.data;
 
     const loaded = await loadRazorpayScript();
@@ -179,7 +167,7 @@ export default function CheckoutPage() {
       order_id: razorpayOrderId,
       handler: async (response) => {
         try {
-          await axios.post(`${API_BASE_URL}/payment/verify`, {
+          await api.post("/payment/verify", {
             razorpayOrderId: response.razorpay_order_id,
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
@@ -193,7 +181,7 @@ export default function CheckoutPage() {
         }
       },
       prefill: {
-        name: user?.fullName || user?.name || "",
+        name: user?.fullName || "",
         contact: addressFields.phone,
       },
       theme: { color: "#F97316" },
@@ -216,12 +204,9 @@ export default function CheckoutPage() {
 
     try {
       setPlacingOrder(true);
-      if (paymentMode === "COD") {
-        await handleCODOrder(addressFields);
-      } else {
-        await handleOnlinePayment(addressFields);
-      }
-    } catch (error) {
+      if (paymentMode === "COD") await handleCODOrder(addressFields);
+      else await handleOnlinePayment(addressFields);
+    } catch {
       toast.error("Terminal Error: Order failed.");
       setPlacingOrder(false);
     }

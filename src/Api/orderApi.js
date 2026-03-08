@@ -1,22 +1,37 @@
-// 📁 src/Api/orderApi.js
-import axios from "axios";
+import api from "./api";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Place order (supports query params used by backend)
+export const placeOrder = (userId, params = {}) =>
+  api.post(`/orders/place/${userId}`, null, { params });
 
-// ✅ Attach JWT token if available
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-// ✅ Place new order
-export const placeOrder = (userId, orderData) =>
-  axios.post(`${API_BASE_URL}/place/${userId}`, orderData, {
-    headers: getAuthHeaders(),
-  });
-
-// ✅ Get orders for a specific customer
+// Orders by customerId
 export const getOrdersByCustomer = (customerId) =>
-  axios.get(`${API_BASE_URL}/customer/${customerId}`, {
-    headers: getAuthHeaders(),
-  });
+  api.get(`/orders/customer/${customerId}`);
+
+// Orders by userId
+export const getOrdersByUser = (userId) =>
+  api.get(`/orders/user/${userId}`);
+
+// Kitchen orders
+export const getOrdersByKitchen = (kitchenId) =>
+  api.get(`/orders/kitchen/${kitchenId}`);
+
+// Single order
+export const getOrderById = (orderId) =>
+  api.get(`/orders/${orderId}`);
+
+// Update status
+export const updateOrderStatus = (orderId, status) =>
+  api.put(`/orders/${orderId}/status?status=${status}`);
+
+// Admin all orders
+export const getAllOrders = () =>
+  api.get(`/orders/all`);
+
+// Reorder data
+export const getReorderItems = (userId) =>
+  api.get(`/orders/reorder/${userId}`);
+
+// Retry payment
+export const retryPayment = (orderId) =>
+  api.post(`/orders/${orderId}/retry-payment`);

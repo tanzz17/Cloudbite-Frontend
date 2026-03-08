@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { resetPassword } from "../Api/api";
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState("");
@@ -12,30 +10,42 @@ export default function VerifyOTP() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const email = location.state?.email || "";
+  const email = (location.state?.email || "").trim().toLowerCase();
 
   const handleVerify = async (e) => {
     e.preventDefault();
 
-    if (!otp || !newPassword) {
+    const cleanOtp = otp.trim();
+    const cleanPassword = newPassword.trim();
+
+    if (!email) {
+      toast.error("Session expired. Please request OTP again.");
+      navigate("/send-otp");
+      return;
+    }
+
+    if (!cleanOtp || !cleanPassword) {
       toast.error("Please enter OTP and new password");
+      return;
+    }
+
+    if (cleanPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/reset-password`, {
+      const data = await resetPassword({
         email,
-        otp,
-        newPassword,
+        otp: cleanOtp,
+        newPassword: cleanPassword,
       });
 
-      toast.success(response.data.message || "Password reset successfully!");
+      toast.success(data?.message || "Password reset successfully!");
       navigate("/login");
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Invalid OTP or request failed"
-      );
+      toast.error(error.response?.data?.message || "Invalid OTP or request failed");
     } finally {
       setLoading(false);
     }
@@ -58,6 +68,7 @@ export default function VerifyOTP() {
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               placeholder="Enter 6-digit OTP"
+              disabled={loading}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
             />
           </div>
@@ -71,6 +82,7 @@ export default function VerifyOTP() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
+              disabled={loading}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
             />
           </div>
@@ -78,7 +90,7 @@ export default function VerifyOTP() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-all duration-200"
+            className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-all duration-200 disabled:opacity-70"
           >
             {loading ? "Verifying..." : "Reset Password"}
           </button>

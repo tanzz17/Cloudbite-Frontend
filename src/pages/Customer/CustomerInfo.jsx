@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../Api/api";
 import toast from "react-hot-toast";
 import { User, MapPin, Phone, Mail, Edit, Save, X } from "lucide-react";
 
@@ -16,28 +15,19 @@ export default function CustomerInfo() {
     postalCode: "",
   });
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
-  // ✅ Fetch customer details
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser) {
-      toast.error("No user found. Please login again.");
-      return;
-    }
+    if (!storedUser) return toast.error("No user found. Please login again.");
 
     const { email, id: userId } = storedUser;
 
-    axios
-      .get(`${API_BASE}/profile`, { params: { email, userId } })
+    api
+      .get("/customers/profile", { params: { email, userId } })
       .then((res) => {
         setCustomer(res.data);
         setFormData(res.data);
       })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to fetch customer profile");
-      });
+      .catch(() => toast.error("Failed to fetch customer profile"));
   }, []);
 
   const handleChange = (e) => {
@@ -51,23 +41,14 @@ export default function CustomerInfo() {
       if (!storedUser) return toast.error("User not found");
 
       const userId = storedUser.id;
-      const res = await axios.put(`${API_BASE}/update/${userId}`, formData);
+      const res = await api.put(`/customers/update/${userId}`, formData);
       setCustomer(res.data);
       setIsEditing(false);
       toast.success("Profile updated successfully!");
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Failed to update profile");
     }
   };
-
-  if (!customer) {
-    return (
-      <div className="flex items-center justify-center h-96 text-gray-500 dark:text-gray-400">
-        Loading your account details...
-      </div>
-    );
-  }
 
   return (
     <div className="bg-gray-100 dark:bg-[#1c1c1e] rounded-2xl shadow-lg p-8 max-w-3xl mx-auto border border-gray-300 dark:border-gray-700 transition-all duration-300">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../Api/api";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Loader2, CreditCard, Wallet } from "lucide-react";
@@ -28,8 +28,8 @@ export default function PlaceOrderPage({ userId }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/customers/cart/user/${userId}`)
+    api
+      .get(`/customers/cart/user/${userId}`)
       .then((res) => setCart(res.data))
       .catch(() => toast.error("Failed to load cart."));
   }, [userId]);
@@ -42,27 +42,23 @@ export default function PlaceOrderPage({ userId }) {
   });
 
   const handleCODOrder = async () => {
-    await axios.post(
-      `${API_BASE_URL}/orders/place/${userId}`,
-      {},
-      { params: getAddressParams() }
-    );
+    await api.post(`/orders/place/${userId}`, {}, { params: getAddressParams() });
     toast.success("Order placed! Pay on delivery.");
     navigate("/orders");
   };
 
   const handleOnlinePayment = async () => {
     // Step 1: Place order (PAYMENT_PENDING)
-    const orderRes = await axios.post(
-      `${API_BASE_URL}/orders/place/${userId}`,
+    const orderRes = await api.post(
+      `/orders/place/${userId}`,
       {},
       { params: getAddressParams() }
     );
     const placedOrder = orderRes.data;
 
     // Step 2: Create Razorpay order
-    const paymentRes = await axios.post(
-      `${API_BASE_URL}/payment/create-order/${placedOrder.orderId}`
+    const paymentRes = await api.post(
+      `/payment/create-order/${placedOrder.orderId}`
     );
     const { razorpayOrderId, amount, keyId } = paymentRes.data;
 
@@ -83,7 +79,7 @@ export default function PlaceOrderPage({ userId }) {
       handler: async (response) => {
         try {
           // Step 4: Verify
-          await axios.post(`${API_BASE_URL}/payment/verify`, {
+          await api.post(`/payment/verify`, {
             razorpayOrderId: response.razorpay_order_id,
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,

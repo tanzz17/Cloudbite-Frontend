@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { CheckCircle2, Receipt, ArrowRight, Home, CreditCard, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../Api/api";
 import { ThemeContext } from "../../context/ThemeContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -22,7 +22,7 @@ export default function OrderSuccess() {
   useEffect(() => {
     const fetchLatestOrder = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/orders/user/${user.id}`);
+        const res = await api.get(`/orders/user/${user.id}`);
         if (res.data && res.data.length > 0) {
           setLatestOrder(res.data[res.data.length - 1]);
         }

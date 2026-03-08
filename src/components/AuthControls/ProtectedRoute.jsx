@@ -3,18 +3,15 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "./AuthContext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
 
-  // ⏳ Not logged in
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (loading) return null; // or spinner component
 
-  // 🚫 Logged in but not allowed for this route
+  if (!user) return <Navigate to="/login" replace />;
+
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // ✅ Authorized access
   return children;
 }

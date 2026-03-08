@@ -1,8 +1,8 @@
-// src/pages/KitchenDashboard/KitchenDashboard.jsx
+/* KitchenDashboard.jsx */
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import KitchenLayout from "./KitchenLayout";
+import api from "../../Api/api";
 
 export default function KitchenDashboard() {
   const [kitchen, setKitchen] = useState(null);
@@ -11,15 +11,7 @@ export default function KitchenDashboard() {
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-        const token = localStorage.getItem("jwt");
-        if (!token) {
-          toast.error("No token found, please log in again");
-          return;
-        }
-
-       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/auth/my-kitchen");
         setKitchen(res.data);
       } catch (error) {
         console.error("Error fetching kitchen:", error);
@@ -28,7 +20,6 @@ export default function KitchenDashboard() {
         setLoading(false);
       }
     };
-
     fetchKitchen();
   }, []);
 

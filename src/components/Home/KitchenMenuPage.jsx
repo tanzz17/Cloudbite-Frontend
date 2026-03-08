@@ -1,56 +1,46 @@
-/* eslint-disable no-empty */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
+/* eslint-disable no-empty */
+/* KitchenMenuPage.jsx */
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { ShoppingCart, Loader2, ArrowLeft, ArrowRight, MapPin, Zap, Info } from "lucide-react";
+import { ShoppingCart, ArrowLeft, ArrowRight, MapPin, Zap, Info } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
+import api from "../../Api/api";
+import { WS_BASE_URL } from "../../config/apiBase";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const getUserId = () => JSON.parse(localStorage.getItem("user"))?.id;
 
-const getUserId = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  return user?.id;
-};
+const addToCartApi = async (userId, foodId, quantity = 1) =>
+  (await api.post(`/customers/cart/add/${userId}/${foodId}?quantity=${quantity}`)).data;
 
-const addToCartApi = async (userId, foodId, quantity = 1) => {
-  const res = await axios.post(`${API_BASE_URL}/customers/cart/add/${userId}/${foodId}?quantity=${quantity}`);
-  return res.data;
-};
-
-const getCartApi = async (userId) => {
-  const res = await axios.get(`${API_BASE_URL}/customers/cart/user/${userId}`);
-  return res.data;
-};
+const getCartApi = async (userId) =>
+  (await api.get(`/customers/cart/user/${userId}`)).data;
 
 const formatPrice = (price) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(price);
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(price || 0);
 
 const getImageUrl = (url) => {
   if (!url) return "https://via.placeholder.com/300x300?text=No+Image";
   if (url.startsWith("http")) return url;
-  return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+  return `${WS_BASE_URL}/${url.replace(/^\/+/, "")}`;
 };
 
-// --- Menu Item Card Component ---
 const MenuItemCard = ({ item, onAddToCart, isDarkMode }) => {
   const isVeg = item.vegetarian;
-
   return (
     <div className={`flex rounded-[2rem] border p-6 mb-6 justify-between items-center transition-all duration-300 hover:scale-[1.01] ${
-        isDarkMode ? "bg-[#1c2231] border-white/5 shadow-2xl" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"
-      }`}>
+      isDarkMode ? "bg-[#1c2231] border-white/5 shadow-2xl" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"
+    }`}>
       <div className="flex-grow flex flex-col justify-between pr-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-             <span className={`w-3 h-3 rounded-full border flex items-center justify-center ${isVeg ? "border-green-500" : "border-red-500"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${isVeg ? "bg-green-500" : "bg-red-500"}`}></span>
-             </span>
-             <span className={`text-[10px] font-black uppercase tracking-widest ${isVeg ? "text-green-500" : "text-red-500"}`}>
-                {isVeg ? "Pure Veg" : "Non-Veg"}
-             </span>
+            <span className={`w-3 h-3 rounded-full border flex items-center justify-center ${isVeg ? "border-green-500" : "border-red-500"}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isVeg ? "bg-green-500" : "bg-red-500"}`}></span>
+            </span>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${isVeg ? "text-green-500" : "text-red-500"}`}>
+              {isVeg ? "Pure Veg" : "Non-Veg"}
+            </span>
           </div>
           <h3 className={`text-xl font-black italic tracking-tighter mb-1 ${isDarkMode ? "text-white" : "text-gray-900"}`}>
             {item.name}
@@ -93,20 +83,22 @@ export default function KitchenMenuPage() {
   const [kitchen, setKitchen] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState({ items: [], total: 0 });
+  const [cart, setCart] = useState({ items: [], totalPrice: 0 });
   const [filterCategory, setFilterCategory] = useState("All");
 
-  const cartItemsCount = cart.items?.reduce((t, i) => t + i.quantity, 0);
-  const cartTotal = cart.total || 0;
+  const cartItemsCount = cart.items?.reduce((t, i) => t + i.quantity, 0) || 0;
+  const cartTotal = cart.totalPrice ?? cart.total ?? 0;
 
   useEffect(() => {
     const fetchKitchenData = async () => {
       try {
-        const resKitchen = await axios.get(`${API_BASE_URL}/kitchens/${kitchenId}`);
-        const resMenu = await axios.get(`${API_BASE_URL}/kitchen/${kitchenId}`);
+        const [resKitchen, resMenu] = await Promise.all([
+          api.get(`/kitchens/${kitchenId}`),
+          api.get(`/kitchen/${kitchenId}`),
+        ]);
         setKitchen(resKitchen.data);
         setMenuItems(resMenu.data || []);
-      } catch (err) {
+      } catch {
         toast.error("Network Error: Verification failed.");
       } finally {
         setLoading(false);
@@ -122,62 +114,44 @@ export default function KitchenMenuPage() {
   const fetchCartData = async () => {
     try {
       const data = await getCartApi(userId);
-      setCart(data);
+      setCart(data || { items: [], totalPrice: 0 });
     } catch {}
   };
 
-const handleAddToCart = async (item) => {
+  const handleAddToCart = async (item) => {
     if (!userId) return toast.error("Please login to the Tribe first!");
 
-    // 1. Check for Single Kitchen Conflict
     if (cart.items && cart.items.length > 0) {
-      // Find the kitchen ID already in the cart. 
-      // We check item.food?.kitchen?.id OR item.kitchenId depending on your DTO structure
       const existingKitchenId = cart.items[0]?.food?.kitchen?.id || cart.items[0]?.kitchenId;
-      const currentKitchenId = kitchenId;
-
-      // DEBUG: Open your browser console (F12) to see these values
-      console.log("Comparing IDs:", { existing: existingKitchenId, current: currentKitchenId });
-
-      // Use loose inequality (!=) to handle string vs number comparison automatically
-      if (existingKitchenId && existingKitchenId != currentKitchenId) {
+      if (existingKitchenId && existingKitchenId != kitchenId) {
         const confirmClear = window.confirm(
           "Single Kitchen Policy: Your cart contains items from another kitchen. Clear cart to add this item?"
         );
-
         if (confirmClear) {
           try {
-            await axios.delete(`${API_BASE_URL}/customers/cart/clear/${userId}`);
+            await api.delete(`/customers/cart/clear/${userId}`);
             await addToCartApi(userId, item.id, 1);
             toast.success("Cart cleared and item added!");
             fetchCartData();
-          } catch (error) {
+          } catch {
             toast.error("Failed to reset cart.");
           }
         }
-        return; 
+        return;
       }
     }
 
-    // 2. Normal Add to Cart
     try {
       await addToCartApi(userId, item.id, 1);
       toast.success(`${item.name} added!`);
       fetchCartData();
     } catch (error) {
-      // If the backend is the one throwing the error, catch it here
-      const backendError = error.response?.data?.message || "Failed to add item.";
-      toast.error(backendError);
+      toast.error(error?.response?.data?.message || "Failed to add item.");
     }
   };
 
-  // ✅ FIX: Logic for filtering items
   const filteredItems = menuItems.filter((item) =>
-    filterCategory === "All"
-      ? true
-      : filterCategory === "Veg"
-      ? item.vegetarian
-      : !item.vegetarian
+    filterCategory === "All" ? true : filterCategory === "Veg" ? item.vegetarian : !item.vegetarian
   );
 
   if (loading) return (

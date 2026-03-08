@@ -15,7 +15,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import CustomerRegister from "./pages/Customer/CustomerRegister";
 import SendOTP from "./pages/SendOTP";
 import VerifyOTP from "./pages/VerifyOTP";
-import DishSearch from "./components/Home/DishSearch"; 
+import DishSearch from "./components/Home/DishSearch";
 
 // ---------- Customer ----------
 import CustomerDashboard from "./pages/Customer/CustomerDashboard";
@@ -23,7 +23,8 @@ import CustomerProfile from "./pages/Customer/CustomerProfile";
 import CustomerCartPage from "./components/Home/CustomerCartPage";
 import CheckoutPage from "./pages/Customer/CheckoutPage";
 import OrderSuccess from "./pages/Customer/OrderSuccess";
-import CustomerOrders from "./pages/Customer/CustomerOrders";
+// import CustomerOrders from "./pages/Customer/CustomerOrders";
+import OrderTrackingPage from "./pages/Customer/OrderTrackingPage";
 
 // ---------- Kitchen Owner ----------
 import KitchenDashboard from "./pages/KitchenOwner/KitchenDashboard";
@@ -47,16 +48,14 @@ import DeliveryHistory from "./pages/DeliveryPartner/DeliveryHistory";
 import DeliveryLayout from "./pages/DeliveryPartner/DeliveryLayout";
 import DeliveryProfile from "./pages/DeliveryPartner/DeliveryProfile";
 
-
-
 // ---------- Auth Modal ----------
 import AuthModal from "./components/AuthControls/AuthModal";
-import OrderTrackingPage from "./pages/Customer/OrderTrackingPage";
 
 // ================= PRIVATE ROUTE =================
 const PrivateRoute = ({ element: Element, allowedRoles }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
 
+  if (loading) return null; // or loader UI
   if (!user) return <Navigate to="/" replace />;
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
@@ -83,19 +82,23 @@ const AppRoutes = () => {
     <Routes>
       {/* ---------- Public ---------- */}
       <Route path="/" element={user ? <CustomerDashboard /> : <Home />} />
-      <Route path="/search" element={<DishSearch />} /> {/* 🔍 ADD THIS LINE */}
+      <Route path="/search" element={<DishSearch />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register" element={<CustomerRegister />} />
       <Route path="/send-otp" element={<SendOTP />} />
       <Route path="/verify-otp" element={<VerifyOTP />} />
       <Route path="/customer/track/:orderId" element={<OrderTrackingPage />} />
 
-
-{/* ---------- Customer ---------- */}
-<Route
-  path="/customer/profile" // ⬅️ Changed from "/"
-  element={<PrivateRoute element={CustomerProfile} allowedRoles={["ROLE_CUSTOMER"]} />}
-/>
+      {/* ---------- Customer ---------- */}
+      <Route
+        path="/customer/profile"
+        element={
+          <PrivateRoute
+            element={CustomerProfile}
+            allowedRoles={["ROLE_CUSTOMER"]}
+          />
+        }
+      />
       {/* <Route
         path="/customer/orders"
         element={<PrivateRoute element={CustomerOrders} allowedRoles={["ROLE_CUSTOMER"]} />}
@@ -107,68 +110,113 @@ const AppRoutes = () => {
       {/* ---------- Kitchen Owner ---------- */}
       <Route
         path="/kitchen/dashboard"
-        element={<PrivateRoute element={KitchenDashboard} allowedRoles={["ROLE_KITCHEN_OWNER"]} />}
+        element={
+          <PrivateRoute
+            element={KitchenDashboard}
+            allowedRoles={["ROLE_KITCHEN_OWNER"]}
+          />
+        }
       />
       <Route
         path="/kitchen/manage-menu"
-        element={<PrivateRoute element={ManageMenu} allowedRoles={["ROLE_KITCHEN_OWNER"]} />}
+        element={
+          <PrivateRoute
+            element={ManageMenu}
+            allowedRoles={["ROLE_KITCHEN_OWNER"]}
+          />
+        }
       />
       <Route
         path="/kitchen/add-dish"
-        element={<PrivateRoute element={AddDish} allowedRoles={["ROLE_KITCHEN_OWNER"]} />}
+        element={
+          <PrivateRoute
+            element={AddDish}
+            allowedRoles={["ROLE_KITCHEN_OWNER"]}
+          />
+        }
       />
       <Route
         path="/kitchen/profile"
-        element={<PrivateRoute element={KitchenProfile} allowedRoles={["ROLE_KITCHEN_OWNER"]} />}
+        element={
+          <PrivateRoute
+            element={KitchenProfile}
+            allowedRoles={["ROLE_KITCHEN_OWNER"]}
+          />
+        }
       />
       <Route
         path="/kitchen/orders"
-        element={<PrivateRoute element={KitchenOrdersPage} allowedRoles={["ROLE_KITCHEN_OWNER"]} />}
+        element={
+          <PrivateRoute
+            element={KitchenOrdersPage}
+            allowedRoles={["ROLE_KITCHEN_OWNER"]}
+          />
+        }
       />
       <Route path="/kitchen/:kitchenId" element={<KitchenMenuPage />} />
 
-{/* ---------- Delivery Partner ---------- */}
-<Route
-  path="/delivery"
-  element={
-    <PrivateRoute
-      element={DeliveryLayout}
-      allowedRoles={["ROLE_DELIVERY_PARTNER"]}
-    />
-  }
->
-  {/* Relative paths: index is /delivery, dashboard is /delivery/dashboard */}
-  <Route index element={<DeliveryDashboard />} />
-  <Route path="dashboard" element={<DeliveryDashboard />} /> 
-  <Route path="active-orders" element={<ActiveOrders />} />
-  <Route path="profile" element={<DeliveryProfile />} />
-  <Route path="history" element={<DeliveryHistory />} />
-</Route>
+      {/* ---------- Delivery Partner ---------- */}
+      <Route
+        path="/delivery"
+        element={
+          <PrivateRoute
+            element={DeliveryLayout}
+            allowedRoles={["ROLE_DELIVERY_PARTNER"]}
+          />
+        }
+      >
+        <Route index element={<DeliveryDashboard />} />
+        <Route path="dashboard" element={<DeliveryDashboard />} />
+        <Route path="active-orders" element={<ActiveOrders />} />
+        <Route path="profile" element={<DeliveryProfile />} />
+        <Route path="history" element={<DeliveryHistory />} />
+      </Route>
 
       {/* ---------- Admin ---------- */}
       <Route
         path="/admin/dashboard"
-        element={<PrivateRoute element={AdminDashboard} allowedRoles={["ROLE_ADMIN"]} />}
+        element={
+          <PrivateRoute element={AdminDashboard} allowedRoles={["ROLE_ADMIN"]} />
+        }
       />
       <Route
         path="/admin/register-kitchen"
-        element={<PrivateRoute element={RegisterKitchen} allowedRoles={["ROLE_ADMIN"]} />}
+        element={
+          <PrivateRoute
+            element={RegisterKitchen}
+            allowedRoles={["ROLE_ADMIN"]}
+          />
+        }
       />
       <Route
         path="/admin/kitchens"
-        element={<PrivateRoute element={ManageKitchens} allowedRoles={["ROLE_ADMIN"]} />}
+        element={
+          <PrivateRoute element={ManageKitchens} allowedRoles={["ROLE_ADMIN"]} />
+        }
       />
       <Route
         path="/admin/orders"
-        element={<PrivateRoute element={ViewOrders} allowedRoles={["ROLE_ADMIN"]} />}
+        element={
+          <PrivateRoute element={ViewOrders} allowedRoles={["ROLE_ADMIN"]} />
+        }
       />
       <Route
         path="/admin/register-delivery-partner"
-        element={<PrivateRoute element={RegisterDeliveryPartner} allowedRoles={["ROLE_ADMIN"]} />}
+        element={
+          <PrivateRoute
+            element={RegisterDeliveryPartner}
+            allowedRoles={["ROLE_ADMIN"]}
+          />
+        }
       />
       <Route
         path="/admin/delivery-partners"
-        element={<PrivateRoute element={ManageDeliveryPartners} allowedRoles={["ROLE_ADMIN"]} />}
+        element={
+          <PrivateRoute
+            element={ManageDeliveryPartners}
+            allowedRoles={["ROLE_ADMIN"]}
+          />
+        }
       />
 
       {/* ---------- Fallback ---------- */}

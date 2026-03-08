@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import Slider from "react-slick";
-import axios from "axios";
 import toast from "react-hot-toast";
+import api from "../../Api/api";
 import { SampleNextArrow, SamplePrevArrow } from "../../components/Home/Arrow";
 import { ThemeContext } from "../../context/ThemeContext";
 
@@ -15,7 +15,7 @@ const ReOrderSlider = ({ userId }) => {
   useEffect(() => {
     const fetchReorderItems = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/orders/reorder/${userId}`);
+        const res = await api.get(`/orders/reorder/${userId}`);
         setReorderItems(res.data);
       } catch (err) {
         console.log("Reorder fetch error:", err);

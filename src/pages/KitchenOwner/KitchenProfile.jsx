@@ -1,19 +1,20 @@
-/* eslint-disable no-unused-vars */
+/* KitchenProfile.jsx */
 import React, { useEffect, useState, useContext } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { Edit, Check, X, Upload, MapPin, Clock, Store } from "lucide-react";
 import KitchenLayout from "./KitchenLayout";
 import { ThemeContext } from "../../context/ThemeContext";
+import api from "../../Api/api";
+import { WS_BASE_URL } from "../../config/apiBase";
 
 export default function KitchenProfile() {
   const { isDarkMode } = useContext(ThemeContext);
+  // eslint-disable-next-line no-unused-vars
   const [kitchen, setKitchen] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
-  const token = localStorage.getItem("jwt");
 
   useEffect(() => {
     const saved = localStorage.getItem("kitchenData");
@@ -28,14 +29,11 @@ export default function KitchenProfile() {
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
+        const res = await api.get("/auth/my-kitchen");
         const data = res.data;
-        const logoUrl = data.logoUrl || (data.images?.[0]) || "/placeholder.jpg";
+        const logoUrl = data.logoUrl || data.images?.[0] || "/placeholder.jpg";
         const updated = { ...data, logoUrl };
-        
+
         setKitchen(updated);
         setFormData(updated);
         setPreview(logoUrl);
@@ -45,14 +43,14 @@ export default function KitchenProfile() {
       }
     };
     fetchKitchen();
-  }, [token]);
+  }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleFileChange = (e) => {
-    const selected = e.target.files[0];
+    const selected = e.target.files?.[0];
     if (selected) {
       setFile(selected);
       setPreview(URL.createObjectURL(selected));
@@ -67,17 +65,15 @@ export default function KitchenProfile() {
       multipartData.append("description", formData.description || "");
       multipartData.append("openingHours", formData.openingHours || "");
       multipartData.append("closingHours", formData.closingHours || "");
-      multipartData.append("open", formData.open || false);
+      multipartData.append("open", String(Boolean(formData.open)));
       if (file) multipartData.append("image", file);
 
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/update-my-kitchen/${formData.id}`,
-        multipartData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put(`/kitchen-owner/update-my-kitchen/${formData.id}`, multipartData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       const updated = res.data;
-      const logoUrl = updated.logoUrl || (updated.images?.[0]) || "/placeholder.jpg";
+      const logoUrl = updated.logoUrl || updated.images?.[0] || "/placeholder.jpg";
       const merged = { ...updated, logoUrl };
 
       setKitchen(merged);
@@ -87,21 +83,15 @@ export default function KitchenProfile() {
       toast.success("Identity updated successfully");
       setIsEditing(false);
       setFile(null);
-    } catch (err) {
+    } catch {
       toast.error("Update failed");
     }
   };
 
-  if (!kitchen) return (
-    <KitchenLayout>
-      <div className="flex justify-center mt-20 italic font-black animate-pulse text-orange-500 tracking-widest">LOADING...</div>
-    </KitchenLayout>
-  );
-
   const getImageUrl = (url) => {
     if (!url) return "/placeholder.jpg";
     if (url.startsWith("blob:") || url.startsWith("http")) return url;
-    return `${import.meta.env.VITE_API_BASE_URL}/${url}`;
+    return `${WS_BASE_URL}/${url.replace(/^\/+/, "")}`;
   };
 
   return (
