@@ -13,8 +13,6 @@ export default function ActiveOrders() {
   const [loading, setLoading] = useState(true);
   const [isAvailable, setIsAvailable] = useState(false);
   const [processingId, setProcessingId] = useState(null);
-  
-  // Prevents duplicate socket connections during React Dev Mode re-renders
   const hasConnected = useRef(false);
 
   const getErrorMessage = (err) => {
@@ -31,7 +29,7 @@ export default function ActiveOrders() {
         getMyDeliveryProfile()
       ]);
       setOrders(ordersRes.data || []);
-      const currentStatus = profileRes.data.status; 
+      const currentStatus = profileRes.data.status;
       setIsAvailable(currentStatus === "AVAILABLE" || currentStatus === "BUSY");
     } catch (err) {
       console.error("Data Sync Error:", err);
@@ -59,11 +57,10 @@ export default function ActiveOrders() {
     }
 
     return () => {
-      // Small timeout to allow potential immediate re-mounting (common in Dev Mode)
       setTimeout(() => {
         if (hasConnected.current) {
-            disconnectSocket();
-            hasConnected.current = false;
+          disconnectSocket();
+          hasConnected.current = false;
         }
       }, 50);
     };
@@ -91,15 +88,12 @@ export default function ActiveOrders() {
     }
     try {
       setProcessingId(orderId);
-      await acceptOrder(orderId); 
-      
+      await acceptOrder(orderId);
       toast.success("Mission Accepted!");
-      // Redirect to dashboard where they can see navigation
       setTimeout(() => navigate("../dashboard"), 400);
     } catch (err) {
-      // This handles the 500 error from your logs
       toast.error(getErrorMessage(err));
-      fetchInitialData(true); 
+      fetchInitialData(true);
     } finally {
       setProcessingId(null);
     }
@@ -109,7 +103,7 @@ export default function ActiveOrders() {
     try {
       setProcessingId(orderId);
       await updateDeliveryStatus(orderId, status);
-      
+
       if (status === "DELIVERED") {
         toast.success("Mission Accomplished!");
         setOrders(prev => prev.filter(o => o.orderId !== orderId));
@@ -136,7 +130,7 @@ export default function ActiveOrders() {
     <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 px-4">
       {/* System Status Toggle */}
       <div className={`mb-8 p-6 rounded-[2.5rem] flex items-center justify-between border transition-all duration-500 ${
-        isAvailable 
+        isAvailable
           ? (isDarkMode ? "bg-green-500/10 border-green-500/20" : "bg-green-50 border-green-100")
           : (isDarkMode ? "bg-red-500/10 border-red-500/20" : "bg-red-50 border-red-100")
       }`}>
@@ -149,8 +143,8 @@ export default function ActiveOrders() {
             <p className={`text-lg font-black italic tracking-tighter ${isDarkMode ? "text-white" : "text-gray-900"}`}>{isAvailable ? "AVAILABLE" : "OFF DUTY"}</p>
           </div>
         </div>
-        <button 
-          onClick={handleToggleStatus} 
+        <button
+          onClick={handleToggleStatus}
           className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-2 ${isAvailable ? "bg-red-500 text-white" : "bg-green-500 text-black"}`}
         >
           <Power size={14} strokeWidth={3} /> {isAvailable ? "Go Offline" : "Go Online"}
@@ -189,14 +183,14 @@ export default function ActiveOrders() {
                       {order.orderStatus?.replace(/_/g, " ")}
                     </span>
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Customer</p>
-                            <p className={`text-sm font-bold ${isDarkMode ? "text-gray-200" : "text-gray-800"}`}>{order.customerName}</p>
-                        </div>
-                        <div>
-                            <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Payout</p>
-                            <p className="text-sm font-black text-green-500">₹{order.deliveryFee || '30.00'}</p>
-                        </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Customer</p>
+                        <p className={`text-sm font-bold ${isDarkMode ? "text-gray-200" : "text-gray-800"}`}>{order.customerName}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Payout</p>
+                        <p className="text-sm font-black text-green-500">₹{order.deliveryFee || '30.00'}</p>
+                      </div>
                     </div>
                     <div className={`flex items-start gap-3 p-4 rounded-2xl border ${isDarkMode ? "bg-white/5 border-white/5" : "bg-gray-50 border-gray-100"}`}>
                       <MapPin size={16} className="text-red-500 mt-0.5 shrink-0" />
@@ -205,29 +199,37 @@ export default function ActiveOrders() {
                   </div>
                 </div>
 
+                {/* ACTION COLUMN */}
                 <div className="flex flex-col justify-center min-w-[220px]">
                   {order.orderStatus === "READY_FOR_PICKUP" && (
-                    <button 
+                    <button
                       disabled={isProcessing || !isAvailable}
-                      onClick={() => handleAcceptOrder(order.orderId)} 
+                      onClick={() => handleAcceptOrder(order.orderId)}
                       className={`w-full font-black text-[10px] uppercase py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${isAvailable ? "bg-orange-500 text-black hover:bg-orange-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
                     >
                       {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <><Navigation size={18} /> Accept Mission</>}
                     </button>
                   )}
-                  {order.orderStatus === "OUT_FOR_DELIVERY" && (
-                    <button 
+
+                  {/* CHANGED: was a pulsing "To Kitchen" div, now a functional button */}
+                  {order.orderStatus === "ON_THE_WAY" && (
+                    <button
                       disabled={isProcessing}
-                      onClick={() => handleUpdateStatus(order.orderId, "DELIVERED")} 
+                      onClick={() => handleUpdateStatus(order.orderId, "OUT_FOR_DELIVERY")}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-black font-black text-[10px] uppercase py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
+                    >
+                      {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <><Navigation size={18} /> Start Delivery</>}
+                    </button>
+                  )}
+
+                  {order.orderStatus === "OUT_FOR_DELIVERY" && (
+                    <button
+                      disabled={isProcessing}
+                      onClick={() => handleUpdateStatus(order.orderId, "DELIVERED")}
                       className="w-full bg-green-500 hover:bg-green-600 text-black font-black text-[10px] uppercase py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95"
                     >
                       {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <><CheckCircle size={18} /> Complete Drop</>}
                     </button>
-                  )}
-                  {order.orderStatus === "ON_THE_WAY" && (
-                    <div className="text-center p-4 border-2 border-dashed border-orange-500/20 rounded-2xl animate-pulse">
-                         <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">To Kitchen</p>
-                    </div>
                   )}
                 </div>
               </div>
