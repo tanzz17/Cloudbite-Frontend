@@ -5,6 +5,21 @@ import api from "../../Api/api";
 import { ThemeContext } from "../../context/ThemeContext";
 import { FiUser, FiMail, FiLock, FiHome, FiMapPin, FiPlusCircle } from "react-icons/fi";
 
+const getErrorMessage = (err) => {
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+
+  if (status === 403) {
+    return "Access denied (403). Please login with an admin account and try again.";
+  }
+
+  if (typeof data === "string") return data;
+  if (data?.message) return data.message;
+  if (data?.error) return data.error;
+
+  return "Something went wrong";
+};
+
 export default function RegisterKitchen() {
   const { isDarkMode } = useContext(ThemeContext);
   const [loading, setLoading] = useState(false);
@@ -22,10 +37,25 @@ export default function RegisterKitchen() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token = localStorage.getItem("jwt");
+    if (!token) {
+      toast.error("Admin login required");
+      return;
+    }
+
+    const payload = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+      kitchenName: formData.kitchenName.trim(),
+      kitchenAddress: formData.kitchenAddress.trim(),
+    };
+
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/admin/register-kitchen", formData);
+      const res = await api.post("/auth/admin/register-kitchen", payload);
 
       toast.success(res.data?.message || "Kitchen registered successfully!");
       setFormData({
@@ -37,7 +67,7 @@ export default function RegisterKitchen() {
       });
     } catch (err) {
       console.error("Registration Error:", err);
-      toast.error(err?.response?.data?.message || err?.response?.data || "Something went wrong");
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
