@@ -51,6 +51,7 @@ import DeliveryProfile from "./pages/DeliveryPartner/DeliveryProfile";
 
 // ---------- Auth Modal ----------
 import AuthModal from "./components/AuthControls/AuthModal";
+import OrderTrackingPage from "./pages/Customer/OrderTrackingPage";
 
 // ================= PRIVATE ROUTE =================
 const PrivateRoute = ({ element: Element, allowedRoles }) => {
@@ -87,6 +88,8 @@ const AppRoutes = () => {
       <Route path="/register" element={<CustomerRegister />} />
       <Route path="/send-otp" element={<SendOTP />} />
       <Route path="/verify-otp" element={<VerifyOTP />} />
+      <Route path="/customer/track/:orderId" element={<OrderTrackingPage />} />
+
 
 {/* ---------- Customer ---------- */}
 <Route
