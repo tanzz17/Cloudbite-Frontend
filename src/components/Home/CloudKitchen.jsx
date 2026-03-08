@@ -16,7 +16,7 @@ export default function CloudKitchens() {
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/api/kitchens/all`)
+      .get(`${import.meta.env.VITE_API_BASE_URL}/kitchens/all`)
       .then((res) => {
         setKitchens(res.data);
         setLoading(false);

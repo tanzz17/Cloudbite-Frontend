@@ -71,7 +71,7 @@ export default function KitchenProfile() {
       if (file) multipartData.append("image", file);
 
       const res = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/kitchen-owner/update-my-kitchen/${formData.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/update-my-kitchen/${formData.id}`,
         multipartData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

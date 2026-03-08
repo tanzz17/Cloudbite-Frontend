@@ -14,7 +14,7 @@ const ManageDeliveryPartners = () => {
   const fetchPartners = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/admin/delivery-partners");
+      const res = await api.get("/admin/delivery-partners");
       setPartners(res.data);
     } catch (err) {
       toast.error("Failed to load delivery partners");
@@ -29,7 +29,7 @@ const ManageDeliveryPartners = () => {
 
   const forceOffline = async (id) => {
     try {
-      await api.put(`/api/admin/delivery-partners/${id}/offline`);
+      await api.put(`/admin/delivery-partners/${id}/offline`);
       toast.success("Partner pushed offline");
       fetchPartners();
     } catch (err) {
@@ -41,7 +41,7 @@ const ManageDeliveryPartners = () => {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
 
     try {
-      await api.delete(`/api/admin/delivery-partners/${id}`);
+      await api.delete(`/admin/delivery-partners/${id}`);
       toast.success("Partner deleted successfully");
       fetchPartners();
     } catch (err) {

@@ -9,7 +9,7 @@ export default function AvailableOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/api/orders/available-for-delivery");
+      const res = await api.get("/orders/available-for-delivery");
       setOrders(res.data || []);
     } catch (err) {
       toast.error("Failed to load available orders");
@@ -24,7 +24,7 @@ export default function AvailableOrders() {
 
   const acceptOrder = async (orderId) => {
     try {
-      await api.post(`/api/delivery/orders/${orderId}/accept`);
+      await api.post(`/delivery/orders/${orderId}/accept`);
       toast.success("Order accepted");
       fetchOrders();
     } catch (err) {

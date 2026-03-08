@@ -30,7 +30,7 @@ export default function RegisterDeliveryPartner() {
     setStatus({ type: "", message: "" });
 
     try {
-      await api.post("/api/admin/register-delivery-partner", formData);
+      await api.post("/admin/register-delivery-partner", formData);
       setStatus({ type: "success", message: "Delivery partner registered successfully!" });
       setTimeout(() => navigate("/admin/delivery-partners"), 2000);
     } catch (err) {

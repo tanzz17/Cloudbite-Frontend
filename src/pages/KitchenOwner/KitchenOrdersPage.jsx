@@ -49,7 +49,7 @@ export default function KitchenOrdersPage() {
 
   const fetchOrders = () => {
     if (!kitchenId) return;
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/kitchen/${kitchenId}`, { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/orders/kitchen/${kitchenId}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setOrders(res.data || []))
       .catch(() => toast.error("Failed to fetch orders"))
       .finally(() => setLoading(false));
@@ -69,7 +69,7 @@ export default function KitchenOrdersPage() {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/status?status=${status}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}/status?status=${status}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, orderStatus: status } : o));
       toast.success(`Status updated to ${status.replace(/_/g, ' ')}`);
     } catch (err) {

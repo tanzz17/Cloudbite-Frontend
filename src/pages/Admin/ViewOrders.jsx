@@ -22,7 +22,7 @@ const ViewOrders = () => {
     setLoading(true);
     try {
       // ✅ Updated to the specific Admin endpoint to avoid 400 errors
-      const res = await api.get("/api/orders/all"); 
+      const res = await api.get("/orders/all"); 
       setOrders(res.data);
     } catch (err) {
       console.error("Order Sync Error:", err);

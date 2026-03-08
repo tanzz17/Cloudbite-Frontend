@@ -30,7 +30,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       // Calling the unified endpoint in your AdminController
-      const res = await api.get("/api/admin/dashboard/stats");
+      const res = await api.get("/admin/dashboard/stats");
       setStats(res.data);
     } catch (_err) {
       console.error("Failed to fetch dashboard stats from backend");
