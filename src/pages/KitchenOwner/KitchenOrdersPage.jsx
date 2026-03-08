@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useContext } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Loader2, Package, Clock, Check, MapPin, Truck, CheckCircle, Zap, UtensilsCrossed } from "lucide-react";
+import { Loader2, Package, Clock, Check, MapPin, Truck, CheckCircle, Zap, UtensilsCrossed, XCircle, CreditCard, Banknote } from "lucide-react";
 import KitchenLayout from "./KitchenLayout";
 import { connectOrderSocket, disconnectSocket } from "../../socket";
 import { ThemeContext } from "../../context/ThemeContext";
@@ -18,6 +18,7 @@ const getStatusDetails = (s) => {
     case "ON_THE_WAY": return { text: "Partner Assigned", icon: Zap, class: "bg-orange-500/10 text-orange-500 border-orange-500/20" };
     case "OUT_FOR_DELIVERY": return { text: "Out for Delivery", icon: Truck, class: "bg-orange-500/10 text-orange-500 border-orange-500/20" };
     case "DELIVERED": return { text: "Completed", icon: CheckCircle, class: "bg-green-500/10 text-green-500 border-green-500/20" };
+    case "CANCELLED": return { text: "Cancelled", icon: XCircle, class: "bg-red-500/10 text-red-500 border-red-500/20" };
     default: return { text: s, icon: Package, class: "bg-gray-500/10 text-gray-500 border-gray-500/20" };
   }
 };
@@ -60,7 +61,7 @@ export default function KitchenOrdersPage() {
     connectOrderSocket("kitchen", (event) => {
       if (event?.orderId) {
         setOrders((prev) => prev.map((o) => o.orderId === event.orderId ? { ...o, orderStatus: event.status } : o));
-        if (event.status === "PENDING") fetchOrders(); 
+        if (event.status === "PENDING") fetchOrders();
       }
     });
     return () => disconnectSocket();
@@ -84,10 +85,12 @@ export default function KitchenOrdersPage() {
     return orders.filter((o) => o.orderStatus === activeTab);
   }, [orders, activeTab]);
 
+  const tabs = ["PENDING", "CONFIRMED", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "ALL"];
+
   return (
     <KitchenLayout>
       <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-        
+
         {/* Header Section */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
@@ -103,8 +106,18 @@ export default function KitchenOrdersPage() {
 
         {/* Tab Navigation */}
         <div className="flex gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
-          {["PENDING", "CONFIRMED", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "ALL"].map((id) => (
-            <button key={id} onClick={() => setActiveTab(id)} className={`px-6 py-3 rounded-2xl whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all border ${activeTab === id ? "bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20 scale-105" : isDarkMode ? "bg-white/5 border-white/5 text-gray-400 hover:border-white/20" : "bg-white border-gray-100 text-gray-500 shadow-sm hover:border-orange-200"}`}>
+          {tabs.map((id) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`px-6 py-3 rounded-2xl whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all border ${
+                activeTab === id
+                  ? "bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20 scale-105"
+                  : isDarkMode
+                  ? "bg-white/5 border-white/5 text-gray-400 hover:border-white/20"
+                  : "bg-white border-gray-100 text-gray-500 shadow-sm hover:border-orange-200"
+              }`}
+            >
               {id === "READY_FOR_PICKUP" ? "Ready / Handover" : id.replace(/_/g, ' ')}
             </button>
           ))}
@@ -115,39 +128,59 @@ export default function KitchenOrdersPage() {
           {filteredOrders.map((order) => {
             const s = getStatusDetails(order.orderStatus);
             const Icon = s.icon;
-            
-            // --- UPDATED LOGIC: Using DB Values instead of Hardcoded Surcharge ---
+
             const dFee = order.deliveryFee || 0;
             const pFee = order.platformFee || 0;
             const dishPrice = order.totalPrice - (dFee + pFee);
-            // ---------------------------------------------------------------------
+
+            const isOnline = order.paymentMode === "ONLINE";
+            const isPaid = order.paymentStatus === "PAID";
 
             return (
               <div key={order.orderId} className={`rounded-[2.5rem] border p-8 flex flex-col justify-between transition-all hover:scale-[1.01] ${isDarkMode ? "bg-[#1c2231] border-white/5 shadow-2xl" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
                 <div>
+                  {/* Order Header */}
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Order Ref</span>
                       <span className={`text-lg font-black italic tracking-tighter ${isDarkMode ? "text-white" : "text-gray-900"}`}>#{order.orderId}</span>
                     </div>
-                    
-                    <div className="flex gap-4 text-right">
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total COD</span>
-                        <span className={`text-xs font-bold opacity-50 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{formatPrice(order.totalPrice)}</span>
+
+                    <div className="flex gap-3 text-right items-start">
+                      {/* Payment Badge */}
+                      <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Payment</span>
+                        {isOnline ? (
+                          <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1 border ${
+                            isPaid
+                              ? "bg-green-500/10 text-green-500 border-green-500/20"
+                              : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                          }`}>
+                            <CreditCard size={9} />
+                            {isPaid ? "Paid" : "Unpaid"}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center gap-1">
+                            <Banknote size={9} />
+                            COD
+                          </span>
+                        )}
                       </div>
-                      <div className="flex flex-col">
+
+                      {/* Dish Price */}
+                      <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Dish Price</span>
                         <span className="text-xl font-black text-green-500 tracking-tighter leading-none">{formatPrice(dishPrice)}</span>
                       </div>
                     </div>
                   </div>
 
+                  {/* Order Status Badge */}
                   <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border mb-6 ${s.class}`}>
                     <Icon size={12} /> {s.text}
                   </div>
 
-                  {/* KITCHEN TICKET (ITEMS) */}
+                  {/* Kitchen Ticket Items */}
                   <div className={`mb-6 p-5 rounded-[2rem] border-2 border-dashed ${isDarkMode ? "bg-white/5 border-white/10" : "bg-orange-50/50 border-orange-100"}`}>
                     <h4 className="text-[9px] font-black uppercase tracking-widest text-orange-500 mb-3 flex items-center gap-2">
                       <UtensilsCrossed size={12} /> Items to Prepare
@@ -168,6 +201,7 @@ export default function KitchenOrdersPage() {
                     </div>
                   </div>
 
+                  {/* Customer & Address */}
                   <div className="space-y-4">
                     <div>
                       <p className={`text-xs font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Customer</p>
@@ -180,36 +214,72 @@ export default function KitchenOrdersPage() {
                   </div>
                 </div>
 
-                {/* Status Buttons */}
-                <div className="mt-8">
+                {/* Status Action Buttons */}
+                <div className="mt-8 flex flex-col gap-3">
                   {order.orderStatus === "PENDING" && (
-                    <button onClick={() => updateOrderStatus(order.orderId, "CONFIRMED")} className="w-full bg-orange-500 hover:bg-orange-600 text-black font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg transition-all active:scale-95">
-                      Accept & Confirm
-                    </button>
+                    <>
+                      <button
+                        onClick={() => updateOrderStatus(order.orderId, "CONFIRMED")}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-black font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg transition-all active:scale-95"
+                      >
+                        Accept & Confirm
+                      </button>
+                      <button
+                        onClick={() => updateOrderStatus(order.orderId, "CANCELLED")}
+                        className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <XCircle size={14} /> Reject Order
+                      </button>
+                    </>
                   )}
+
                   {order.orderStatus === "CONFIRMED" && (
-                    <button onClick={() => updateOrderStatus(order.orderId, "READY_FOR_PICKUP")} className="w-full bg-indigo-500 hover:bg-indigo-600 text-black font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg transition-all active:scale-95">
-                      Mark as Ready
-                    </button>
+                    <>
+                      <button
+                        onClick={() => updateOrderStatus(order.orderId, "READY_FOR_PICKUP")}
+                        className="w-full bg-indigo-500 hover:bg-indigo-600 text-black font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg transition-all active:scale-95"
+                      >
+                        Mark as Ready
+                      </button>
+                      <button
+                        onClick={() => updateOrderStatus(order.orderId, "CANCELLED")}
+                        className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <XCircle size={14} /> Cancel Order
+                      </button>
+                    </>
                   )}
+
                   {order.orderStatus === "READY_FOR_PICKUP" && (
                     <div className={`text-center py-4 rounded-2xl border border-dashed animate-pulse text-[10px] font-black uppercase tracking-[0.2em] ${isDarkMode ? "border-white/10 text-gray-500" : "border-gray-200 text-gray-400"}`}>
                       Waiting for Partner...
                     </div>
                   )}
+
                   {order.orderStatus === "ON_THE_WAY" && (
-                    <button onClick={() => updateOrderStatus(order.orderId, "OUT_FOR_DELIVERY")} className="w-full bg-orange-500 hover:bg-orange-600 text-black font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => updateOrderStatus(order.orderId, "OUT_FOR_DELIVERY")}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-black font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3"
+                    >
                       <Truck size={16} /> Handover Food
                     </button>
                   )}
+
                   {order.orderStatus === "OUT_FOR_DELIVERY" && (
                     <div className="text-orange-500 font-black text-[10px] uppercase tracking-[0.2em] text-center py-4 flex items-center justify-center gap-3 bg-orange-500/5 rounded-2xl border border-orange-500/20">
                       <Truck size={16} /> Transit in Progress
                     </div>
                   )}
+
                   {order.orderStatus === "DELIVERED" && (
                     <div className="text-green-500 font-black text-[10px] uppercase tracking-[0.2em] text-center py-4 flex items-center justify-center gap-3 bg-green-500/5 rounded-2xl border border-green-500/20">
                       <CheckCircle size={16} /> Mission Completed
+                    </div>
+                  )}
+
+                  {order.orderStatus === "CANCELLED" && (
+                    <div className="text-red-500 font-black text-[10px] uppercase tracking-[0.2em] text-center py-4 flex items-center justify-center gap-3 bg-red-500/5 rounded-2xl border border-red-500/20">
+                      <XCircle size={16} /> Order Cancelled
                     </div>
                   )}
                 </div>
