@@ -17,7 +17,7 @@ export default function KitchenDashboard() {
           return;
         }
 
-        const res = await axios.get("cloudbite-backend-production.up.railway.app/auth/my-kitchen", {
+       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setKitchen(res.data);

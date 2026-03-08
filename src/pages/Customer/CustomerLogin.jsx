@@ -19,7 +19,7 @@ export default function CustomerLogin() {
     setLoading(true);
     try {
       const res = await axios.post(
-        "cloudbite-backend-production.up.railway.app/customer/login", // 🔹 backend endpoint
+      `${import.meta.env.VITE_API_BASE_URL}/customer/login`,
         credentials
       );
       login(res.data);

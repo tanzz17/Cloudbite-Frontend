@@ -7,7 +7,7 @@ import { Trash2, Plus, Minus, ArrowLeft, ArrowRight, Loader2, ShoppingBag, Zap, 
 import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../context/ThemeContext";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user"));

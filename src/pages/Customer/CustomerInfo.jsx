@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -15,7 +16,7 @@ export default function CustomerInfo() {
     postalCode: "",
   });
 
-  const API_BASE = "http://localhost:8080/api/customers";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // ✅ Fetch customer details
   useEffect(() => {

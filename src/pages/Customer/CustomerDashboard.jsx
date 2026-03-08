@@ -52,7 +52,7 @@ export default function CustomerDashboard() {
       setSelectedSubCategory("");
 
       const res = await fetch(
-        `http://localhost:8080/api/public/category/${category}`
+        `${import.meta.env.VITE_API_BASE_URL}/api/public/category/${category}`
       );
       const data = await res.json();
       setFoods(data);
@@ -67,7 +67,7 @@ export default function CustomerDashboard() {
       setSelectedSubCategory(subCategory);
 
       const res = await fetch(
-        `http://localhost:8080/api/public/subcategory/${subCategory}`
+        `${import.meta.env.VITE_API_BASE_URL}/api/public/subcategory/${subCategory}`
       );
       const data = await res.json();
       setFoods(data);

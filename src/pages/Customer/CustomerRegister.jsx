@@ -24,7 +24,7 @@ export default function CustomerRegister() {
     try {
       // 🔹 Replace with your backend registration endpoint
       const res = await axios.post(
-        "http://localhost:8080/api/customer/register",
+        `${import.meta.env.VITE_API_BASE_URL}api/customer/register`,
         formData
       );
 

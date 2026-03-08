@@ -17,8 +17,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../context/ThemeContext";
 
-const API_BASE_URL = "cloudbite-backend-production.up.railway.app/api";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const DELIVERY_FEE = 30.0;
 const PLATFORM_FEE = 5.0;
 

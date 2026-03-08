@@ -26,7 +26,7 @@ export default function AddDish() {
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-        const res = await axios.get("cloudbite-backend-production.up.railway.app/auth/my-kitchen", {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setKitchen(res.data);
@@ -67,7 +67,7 @@ export default function AddDish() {
       };
 
       await axios.post(
-        `http://localhost:8080/api/kitchen-owner/add-item/${kitchen.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/kitchen-owner/add-item/${kitchen.id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );

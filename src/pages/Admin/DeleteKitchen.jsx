@@ -13,7 +13,7 @@ const DeleteKitchen = ({ kitchenId, kitchenName, onDeleteSuccess }) => {
       const token = localStorage.getItem("jwt");
 
       // ✅ Corrected backend URL
-      await axios.delete(`http://localhost:8080/auth/admin/delete-kitchen/${kitchenId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/auth/admin/delete-kitchen/${kitchenId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

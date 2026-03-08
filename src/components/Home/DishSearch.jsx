@@ -6,7 +6,7 @@ import { Search, Loader2, Utensils, Zap, ArrowRight, XCircle, ChevronLeft, FastF
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from "react-hot-toast";
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // --- Helper Functions ---
 const getUserId = () => {

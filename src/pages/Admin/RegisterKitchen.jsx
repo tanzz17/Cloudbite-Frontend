@@ -26,7 +26,7 @@ export default function RegisterKitchen() {
     try {
       const token = localStorage.getItem("jwt");
       const res = await axios.post(
-        "http://localhost:8080/api/admin/register-kitchen",
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/register-kitchen`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

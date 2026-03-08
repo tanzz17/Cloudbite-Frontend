@@ -14,7 +14,7 @@ const ManageKitchens = () => {
     try {
       const token = localStorage.getItem("jwt");
       const response = await axios.get(
-        "http://localhost:8080/auth/admin/kitchens",
+        `${import.meta.env.VITE_API_BASE_URL}/auth/admin/kitchens`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setKitchens(response.data);

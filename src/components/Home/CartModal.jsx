@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { Loader2, Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ✅ Get stored userId
 const getUserId = () => {

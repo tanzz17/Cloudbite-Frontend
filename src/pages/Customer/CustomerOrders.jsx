@@ -11,8 +11,8 @@ import {
 import { ThemeContext } from "../../context/ThemeContext";
 import { connectOrderSocket, disconnectSocket } from "../../socket";
 
-const API_BASE = "cloudbite-backend-production.up.railway.app/api/orders";
-const API_PAYMENT = "cloudbite-backend-production.up.railway.app/api/payment";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL}api/orders`;
+const API_PAYMENT = `${import.meta.env.VITE_API_BASE_URL}api/payment`;
 
 const formatPrice = (price) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(price || 0);

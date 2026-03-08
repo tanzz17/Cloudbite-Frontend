@@ -1,7 +1,7 @@
 // 📁 src/api/cartApi.js
 import axios from "axios";
 
-const API_BASE_URL = "cloudbite-backend-production.up.railway.app";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ✅ Get full cart by userId
 export const getCart = (userId) => axios.get(`${API_BASE_URL}/user/${userId}`);

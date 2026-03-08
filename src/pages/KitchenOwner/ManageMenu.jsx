@@ -19,7 +19,7 @@ export default function ManageMenu() {
   useEffect(() => {
     const fetchKitchen = async () => {
       try {
-        const res = await axios.get("cloudbite-backend-production.up.railway.app/auth/my-kitchen", {
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/my-kitchen`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setKitchen(res.data);
@@ -34,7 +34,7 @@ export default function ManageMenu() {
     if (!kitchen?.id) return;
     try {
       const res = await axios.get(
-        `cloudbite-backend-production.up.railway.app/api/kitchen-owner/foods/${kitchen.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/kitchen-owner/foods/${kitchen.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setFoods(res.data);
@@ -53,7 +53,7 @@ export default function ManageMenu() {
     if (!window.confirm("Are you sure you want to delete this dish?")) return;
     try {
       await axios.delete(
-        `cloudbite-backend-production.up.railway.app/api/kitchen-owner/foods/${kitchen.id}/${foodId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/kitchen-owner/foods/${kitchen.id}/${foodId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Dish deleted successfully");
@@ -116,7 +116,7 @@ export default function ManageMenu() {
       };
 
       await axios.put(
-        `cloudbite-backend-production.up.railway.app/api/kitchen-owner/foods/${kitchen.id}/${editingFood.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/kitchen-owner/foods/${kitchen.id}/${editingFood.id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
