@@ -16,6 +16,7 @@ import {
 import {
   getActiveOrders,
   updateDeliveryStatus,
+  updateDeliveryLocation,
   acceptOrder,
   goOnline,
   goOffline,
@@ -33,11 +34,76 @@ export default function ActiveOrders() {
   const [processingId, setProcessingId] = useState(null);
   const hasConnected = useRef(false);
 
+  const gpsWatchRef = useRef(null);
+  const gpsOrderIdRef = useRef(null);
+  const gpsLastSentRef = useRef(0);
+  const gpsErrorShownRef = useRef(false);
+
   const getErrorMessage = (err) => {
     if (typeof err?.response?.data === "string") return err.response.data;
     if (err?.response?.data?.message) return err.response.data.message;
     return "Protocol error: check system logs.";
   };
+
+  const stopGpsWatch = useCallback(() => {
+    if (gpsWatchRef.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(gpsWatchRef.current);
+    }
+    gpsWatchRef.current = null;
+    gpsOrderIdRef.current = null;
+    gpsLastSentRef.current = 0;
+    gpsErrorShownRef.current = false;
+  }, []);
+
+  const startGpsWatch = useCallback((orderId) => {
+    if (!navigator.geolocation) {
+      if (!gpsErrorShownRef.current) {
+        toast.error("Geolocation is not supported on this device.");
+        gpsErrorShownRef.current = true;
+      }
+      return;
+    }
+
+    // No-op if already watching same order
+    if (gpsOrderIdRef.current === orderId && gpsWatchRef.current !== null) return;
+
+    stopGpsWatch();
+    gpsOrderIdRef.current = orderId;
+
+    gpsWatchRef.current = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const now = Date.now();
+        if (now - gpsLastSentRef.current < 3000) return; // throttle 3s
+        gpsLastSentRef.current = now;
+
+        const { latitude, longitude, heading, speed } = pos.coords;
+
+        try {
+          await updateDeliveryLocation(orderId, {
+            lat: latitude,
+            lng: longitude,
+            heading: heading ?? undefined,
+            speed: speed ?? undefined,
+          });
+        } catch (err) {
+          // keep silent in UI to avoid spam; debug in console
+          console.error("Location update failed:", err?.response?.data || err?.message || err);
+        }
+      },
+      (err) => {
+        if (!gpsErrorShownRef.current) {
+          toast.error("Location permission denied. Live tracking will be unavailable.");
+          gpsErrorShownRef.current = true;
+        }
+        console.error("Geolocation error:", err);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 3000,
+      }
+    );
+  }, [stopGpsWatch]);
 
   const fetchInitialData = useCallback(async (isSilent = false) => {
     try {
@@ -74,12 +140,23 @@ export default function ActiveOrders() {
     }
 
     return () => {
+      stopGpsWatch();
       if (hasConnected.current) {
         disconnectSocket();
         hasConnected.current = false;
       }
     };
-  }, [fetchInitialData]);
+  }, [fetchInitialData, stopGpsWatch]);
+
+  // Start/stop live GPS stream based on active OUT_FOR_DELIVERY order
+  useEffect(() => {
+    const liveOrder = orders.find((o) => o.orderStatus === "OUT_FOR_DELIVERY");
+    if (liveOrder) {
+      startGpsWatch(liveOrder.orderId);
+    } else {
+      stopGpsWatch();
+    }
+  }, [orders, startGpsWatch, stopGpsWatch]);
 
   const handleToggleStatus = async () => {
     try {
@@ -120,6 +197,7 @@ export default function ActiveOrders() {
       await updateDeliveryStatus(orderId, status);
 
       if (status === "DELIVERED") {
+        stopGpsWatch();
         toast.success("Mission Accomplished!");
         setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
         setTimeout(() => navigate("../history"), 500);
@@ -207,7 +285,7 @@ export default function ActiveOrders() {
                       </div>
                       <div>
                         <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Payout</p>
-                        <p className="text-sm font-black text-green-500">₹{order.deliveryFee || '30.00'}</p>
+                        <p className="text-sm font-black text-green-500">{"\u20B9"}{order.deliveryFee || "30.00"}</p>
                       </div>
                     </div>
                     <div className={`flex items-start gap-3 p-4 rounded-2xl border ${isDarkMode ? "bg-white/5 border-white/5" : "bg-gray-50 border-gray-100"}`}>
@@ -217,7 +295,6 @@ export default function ActiveOrders() {
                   </div>
                 </div>
 
-                {/* ACTION COLUMN */}
                 <div className="flex flex-col justify-center min-w-[220px]">
                   {order.orderStatus === "READY_FOR_PICKUP" && (
                     <button
@@ -229,7 +306,6 @@ export default function ActiveOrders() {
                     </button>
                   )}
 
-                  {/* CHANGED: was a pulsing "To Kitchen" div, now a functional button */}
                   {order.orderStatus === "ON_THE_WAY" && (
                     <button
                       disabled={isProcessing}
@@ -258,3 +334,6 @@ export default function ActiveOrders() {
     </div>
   );
 }
+
+
+
