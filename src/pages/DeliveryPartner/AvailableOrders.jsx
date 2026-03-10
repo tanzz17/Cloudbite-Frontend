@@ -9,7 +9,7 @@ export default function AvailableOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/orders/available-for-delivery");
+      const res = await api.get("/delivery/orders/available-for-delivery");
       setOrders(res.data || []);
     } catch (err) {
       toast.error("Failed to load available orders");
@@ -47,9 +47,9 @@ export default function AvailableOrders() {
             className="bg-white p-5 rounded-xl shadow flex justify-between items-center"
           >
             <div>
-              <p className="font-semibold">Order #{order.id}</p>
+              <p className="font-semibold">Order #{order.orderId}</p>
               <p className="text-sm text-gray-600">
-                Kitchen: {order.kitchen?.name}
+                Kitchen: {order.kitchenName || "Unknown"}
               </p>
               <p className="text-sm text-gray-600">
                 Address: {order.deliveryAddress}
@@ -57,7 +57,7 @@ export default function AvailableOrders() {
             </div>
 
             <button
-              onClick={() => acceptOrder(order.id)}
+              onClick={() => acceptOrder(order.orderId)}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
             >
               Accept
@@ -68,3 +68,4 @@ export default function AvailableOrders() {
     </div>
   );
 }
+
