@@ -6,7 +6,15 @@ import api from "../../Api/api";
 import { PlusCircle, Image as ImageIcon, IndianRupee, Tag, Info } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
 
-export default function AddDish() {
+const getErrorMessage = (error, fallback) => {
+  const data = error?.response?.data;
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  if (data.message) return data.message;
+  if (data.error) return data.error;
+  return fallback;
+};
+export default function AddDish\(\) \{
   const { isDarkMode } = useContext(ThemeContext);
   const [kitchen, setKitchen] = useState(null);
 
@@ -75,7 +83,7 @@ export default function AddDish() {
         seasonal: false,
       });
     } catch (error) {
-      toast.error(error?.response?.data?.message || error?.response?.data || "Failed to add dish");
+      toast.error(getErrorMessage(error, "Failed to add dish"));
     }
   };
 
@@ -308,3 +316,4 @@ const Layers = ({ size, className }) => (
     <polyline points="2 12 12 17 22 12" />
   </svg>
 );
+
