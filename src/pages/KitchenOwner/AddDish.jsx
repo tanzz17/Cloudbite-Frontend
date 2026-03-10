@@ -199,18 +199,18 @@ export default function AddDish\(\) \{
               {/* SubCategory */}
               <div>
                 <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-orange-500 mb-3">
-                  <Layers size={12} /> Sub Category
+                  <Layers size={12} /> Sub Category (Optional)
                 </label>
                 <select
                   name="subCategory"
                   value={formData.subCategory}
                   onChange={handleChange}
-                  required
+                  
                   className={`w-full p-4 rounded-2xl text-sm font-bold border outline-none focus:border-orange-500 transition-all appearance-none cursor-pointer ${
                     isDarkMode ? "bg-white/5 border-white/5 text-white" : "bg-gray-50 border-gray-100"
                   }`}
                 >
-                  <option value="">Select Sub Category</option>
+                  <option value="">Select Sub Category (Optional)</option>
 
                   {formData.category === "Breakfast" && (
                     <>
@@ -316,4 +316,5 @@ const Layers = ({ size, className }) => (
     <polyline points="2 12 12 17 22 12" />
   </svg>
 );
+
 
