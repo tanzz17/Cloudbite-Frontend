@@ -14,7 +14,7 @@ const getErrorMessage = (error, fallback) => {
   if (data.error) return data.error;
   return fallback;
 };
-export default function AddDish\(\) \{
+export default function AddDish(){
   const { isDarkMode } = useContext(ThemeContext);
   const [kitchen, setKitchen] = useState(null);
 
